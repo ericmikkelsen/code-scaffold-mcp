@@ -16,12 +16,16 @@ export type Language = 'ts' | 'js';
 
 /** Configuration for scaffoldFunction() */
 export type ScaffoldFunctionConfig = {
+  /** Valid JavaScript identifier for the generated function name */
   name: string;
   paramDefs: ParamDef[];
+  /** TypeScript return type string, e.g. 'string', 'boolean', 'User' */
   outputType: string;
   /** Optional description for the @returns JSDoc tag. Defaults to a placeholder. */
   returnDescription?: string;
+  /** Concrete JS value used as the placeholder return and in the wiring test assertion */
   exampleOutput: unknown;
+  /** Output language for the generated source and test files */
   language: Language;
 };
 

@@ -21,7 +21,7 @@ export function testTemplateGenerator(
   exampleOutput: unknown,
   language: Language = 'ts',
 ): string {
-  const moduleExt = language === 'js' ? `.${language}` : '';
+  const moduleExt = language === 'js' ? '.js' : '';
   const callArgs = paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
   const expectedOutput = toSourceLiteral(exampleOutput);
 

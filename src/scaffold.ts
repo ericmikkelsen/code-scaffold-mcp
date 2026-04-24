@@ -22,9 +22,8 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
     throw new Error(`scaffoldFunction: '${name}' is not a valid JavaScript identifier`);
   }
 
-  const ext = language;
-  const fileName = `${name}.${ext}`;
-  const testFileName = `${name}.test.${ext}`;
+  const fileName = `${name}.${language}`;
+  const testFileName = `${name}.test.${language}`;
 
   const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription);
   const params = toJSParams(paramDefs, language);
