@@ -1,0 +1,56 @@
+name: Version
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history so the version commit can be pushed
+          fetch-depth: 0
+          # Use a PAT or the default GITHUB_TOKEN (contents: write is set above)
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Determine version bump
+        id: bump
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          BUMP=patch
+
+          # Breaking change: type! or BREAKING CHANGE in body → major
+          if echo "$PR_TITLE" | grep -qE '^[a-z]+(\(.+\))?!:'; then
+            BUMP=major
+          elif echo "$PR_BODY" | grep -qE '^BREAKING CHANGE:'; then
+            BUMP=major
+          # feat → minor
+          elif echo "$PR_TITLE" | grep -qE '^feat(\(.+\))?:'; then
+            BUMP=minor
+          fi
+
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "Determined bump: $BUMP"
+
+      - name: Bump version in package.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version ${{ steps.bump.outputs.bump }} --message "chore(release): v%s"
+
+      - name: Push version commit and tag
+        run: git push --follow-tags
