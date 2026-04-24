@@ -9,13 +9,13 @@ Code MCP pre-scaffolds function skeletons with types, JSDoc, and node:test templ
 ## Installation
 
 ```bash
-npm install
+npm install code-scaffold-mcp
 ```
 
 ## Usage
 
 ```typescript
-import { scaffoldFunction } from './src/index.js';
+import { scaffoldFunction } from 'code-scaffold-mcp';
 
 const result = scaffoldFunction({
   name: 'validateEmail',
@@ -85,6 +85,65 @@ export function validateEmail(email) {
 
   return true;
 }
+```
+
+### Writing files to disk
+
+Use Node's built-in `writeFile` to persist the scaffold output to your project:
+
+```typescript
+import { writeFile } from 'node:fs/promises';
+import { scaffoldFunction } from 'code-scaffold-mcp';
+
+const result = scaffoldFunction({
+  name: 'greetUser',
+  paramDefs: [
+    { name: 'name', tsType: 'string', example: 'Alice', description: 'Name of the user to greet' },
+  ],
+  outputType: 'string',
+  exampleInput: { name: 'Alice' },
+  exampleOutput: 'Hello, Alice!',
+  language: 'ts',
+});
+
+await writeFile(result.fileName, result.source, 'utf8');
+await writeFile(result.testFileName, result.testSource, 'utf8');
+
+console.log(`Created ${result.fileName} and ${result.testFileName}`);
+// Created greetUser.ts and greetUser.test.ts
+```
+
+**`greetUser.ts`** (generated)
+```ts
+/**
+ * TODO: Describe the function purpose.
+ * @param name - Name of the user to greet
+ * @returns Expected return type for this scaffold
+ */
+export function greetUser(name: string): string {
+  // TODO: implement business logic
+  // Example input from scaffold config: { name: 'Alice' }
+  // Example output from scaffold config: 'Hello, Alice!'
+
+  return 'Hello, Alice!';
+}
+```
+
+**`greetUser.test.ts`** (generated)
+```ts
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { greetUser } from './greetUser';
+
+test('TODO: replace with real behavior tests', () => {
+  // This starter test confirms wiring only.
+  assert.equal(greetUser('Alice'), 'Hello, Alice!');
+});
+
+test('TODO: add edge cases after implementation', () => {
+  // Example: invalid name cases should be asserted here.
+  assert.ok(true);
+});
 ```
 
 ## API
