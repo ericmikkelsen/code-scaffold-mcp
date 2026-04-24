@@ -105,6 +105,30 @@ node --import tsx/esm /tmp/scaffold-myFunc.ts
 
 ---
 
+## Code Review
+
+Every PR should be reviewed through two lenses:
+
+### Senior Developer — Maintainability, Best Practices & Clarity
+
+Look for:
+- Code is clean, readable, and self-documenting (good naming, minimal surprises).
+- Follows established patterns in the codebase (ESM imports, `node:test`, no runtime deps).
+- No unnecessary complexity — prefer simple, direct solutions.
+- Edge cases and error paths are handled.
+- Tests cover the meaningful behavior, not just the happy path.
+
+### Junior Developer — Ease of Use
+
+Look for:
+- Public API is intuitive and forgiving for a first-time user.
+- Parameter names and types make intent obvious without needing to read the source.
+- JSDoc examples are present and runnable as written.
+- Error messages are descriptive enough to guide someone new to the library.
+- `README` or inline docs reflect any new behavior so no prior context is required.
+
+---
+
 ## General Coding Conventions
 
 - **Language**: TypeScript-first. All source files live in `src/` and are compiled to `dist/`.
