@@ -3,20 +3,39 @@
   "version": "1.0.0",
   "description": "A scaffold-first system for generating function, component, and schema templates",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "node --import tsx/esm --test src/*.test.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test:coverage": "node --import tsx/esm --experimental-test-coverage --test src/*.test.ts"
+    "test:coverage": "node --import tsx/esm --experimental-test-coverage --test src/*.test.ts",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
+  "keywords": [
+    "scaffold",
+    "codegen",
+    "mcp",
+    "typescript"
+  ],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericmikkelsen/code-scaffold-mcp.git"
+  },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
-  "type": "module",
-  "types": "dist/index.d.ts"
+  "type": "module"
 }
