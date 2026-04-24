@@ -3,7 +3,7 @@ import type { ParamDef, Language } from './types.js';
 /**
  * Converts an array of ParamDef objects into a function parameter string.
  *
- * - For TypeScript: includes inline type annotations  (`email: string, count: number`)
+ * - For TypeScript: includes inline type annotations (`email: string, count: number`)
  * - For JavaScript: parameter names only              (`email, count`)
  *
  * @param paramDefs - Array of parameter definitions

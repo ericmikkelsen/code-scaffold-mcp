@@ -8,6 +8,7 @@ export type ParamDef = {
   tsType: string;
   /** Concrete JS value used as a test fixture and example comment */
   example: unknown;
+  /** Optional description used in the generated JSDoc @param line; falls back to the param name */
   description?: string;
 };
 
@@ -31,8 +32,12 @@ export type ScaffoldFunctionConfig = {
 
 /** Return value from scaffoldFunction() */
 export type ScaffoldFunctionResult = {
+  /** File name for the generated source file, e.g. 'myFunc.ts' or 'myFunc.js' */
   fileName: string;
+  /** File name for the generated test file, e.g. 'myFunc.test.ts' or 'myFunc.test.js' */
   testFileName: string;
+  /** Complete source of the generated function file */
   source: string;
+  /** Complete source of the generated test file */
   testSource: string;
 };

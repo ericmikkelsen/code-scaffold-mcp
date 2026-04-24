@@ -30,14 +30,13 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
   const returnTypeSuffix = language === 'ts' ? `: ${outputType}` : '';
   const returnValue = toSourceLiteral(exampleOutput);
   const inputComment = toSourceLiteral(Object.fromEntries(paramDefs.map((p) => [p.name, p.example])));
-  const outputComment = toSourceLiteral(exampleOutput);
 
   const source = [
     jsdoc,
     `export function ${name}(${params})${returnTypeSuffix} {`,
     `  // TODO: implement business logic`,
     `  // Example input from scaffold config: ${inputComment}`,
-    `  // Example output from scaffold config: ${outputComment}`,
+    `  // Example output from scaffold config: ${returnValue}`,
     ``,
     `  return ${returnValue};`,
     `}`,
