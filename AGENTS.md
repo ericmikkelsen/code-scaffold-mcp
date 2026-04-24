@@ -63,6 +63,48 @@ The **PR title** is used as the primary signal for the versioning workflow. It m
 
 ---
 
+## Scaffolding New Functions
+
+When adding a **new exported function** to `src/`, use `scaffoldFunction` from the local source to generate the initial `.ts` source file and its companion `.test.ts` file. This keeps the function signature, JSDoc, and wiring test in sync from the start.
+
+### How to run it
+
+Write a one-off script in `/tmp/` (never commit it) and execute it with the `tsx/esm` loader:
+
+```ts
+// /tmp/scaffold-myFunc.ts
+import { scaffoldFunction } from '/home/runner/work/code-scaffold-mcp/code-scaffold-mcp/src/index.js';
+import { writeFileSync } from 'node:fs';
+
+const result = scaffoldFunction({
+  name: 'myFunc',
+  language: 'ts',
+  paramDefs: [
+    { name: 'input', tsType: 'string', example: 'hello', description: 'The input string' },
+  ],
+  outputType: 'string',
+  exampleInput: { input: 'hello' },
+  exampleOutput: 'HELLO',
+});
+
+const srcDir = '/home/runner/work/code-scaffold-mcp/code-scaffold-mcp/src';
+writeFileSync(`${srcDir}/${result.fileName}`, result.source);
+writeFileSync(`${srcDir}/${result.testFileName}`, result.testSource);
+console.log('wrote', result.fileName, result.testFileName);
+```
+
+```sh
+node --import tsx/esm /tmp/scaffold-myFunc.ts
+```
+
+### After scaffolding
+
+1. Open `src/myFunc.ts` and replace the `// TODO` placeholder with the real implementation.
+2. Update `src/index.ts` to export the new function.
+3. Run the tests to confirm the wiring test passes: `node --import tsx/esm --test src/*.test.ts`
+
+---
+
 ## General Coding Conventions
 
 - **Language**: TypeScript-first. All source files live in `src/` and are compiled to `dist/`.
