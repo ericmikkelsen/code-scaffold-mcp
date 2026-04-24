@@ -1,13 +1,8 @@
-import { inspect } from 'node:util';
+import { toSourceLiteral } from './utils.js';
 import { toJSParams } from './params.js';
 import { toJSDOC } from './jsdoc.js';
 import { testTemplateGenerator } from './test-template.js';
 import type { ScaffoldFunctionConfig, ScaffoldFunctionResult } from './types.js';
-
-/** Serializes a value to a compact JS source-code literal. */
-function toSourceLiteral(value: unknown): string {
-  return inspect(value, { depth: 10, compact: true });
-}
 
 /**
  * Scaffolds a complete function with JSDoc and a companion test file.
@@ -18,19 +13,24 @@ function toSourceLiteral(value: unknown): string {
  *
  * @param config - Scaffold configuration (name, params, types, examples, language)
  * @returns `{ fileName, testFileName, source, testSource }` for the scaffold
+ * @throws {Error} If `name` is not a valid JavaScript identifier
  */
 export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFunctionResult {
-  const { name, paramDefs, outputType, exampleInput, exampleOutput, language } = config;
+  const { name, paramDefs, outputType, returnDescription, exampleOutput, language } = config;
+
+  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+    throw new Error(`scaffoldFunction: '${name}' is not a valid JavaScript identifier`);
+  }
 
   const ext = language;
   const fileName = `${name}.${ext}`;
   const testFileName = `${name}.test.${ext}`;
 
-  const jsdoc = toJSDOC(paramDefs, outputType, language);
+  const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription);
   const params = toJSParams(paramDefs, language);
   const returnTypeSuffix = language === 'ts' ? `: ${outputType}` : '';
   const returnValue = toSourceLiteral(exampleOutput);
-  const inputComment = toSourceLiteral(exampleInput);
+  const inputComment = toSourceLiteral(Object.fromEntries(paramDefs.map((p) => [p.name, p.example])));
   const outputComment = toSourceLiteral(exampleOutput);
 
   const source = [
@@ -45,12 +45,7 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
     ``,
   ].join('\n');
 
-  const testSource = testTemplateGenerator(
-    name,
-    paramDefs,
-    { input: exampleInput, output: exampleOutput },
-    language,
-  );
+  const testSource = testTemplateGenerator(name, paramDefs, exampleOutput, language);
 
   return { fileName, testFileName, source, testSource };
 }

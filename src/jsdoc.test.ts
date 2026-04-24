@@ -87,3 +87,15 @@ test('toJSDOC - empty params still produces header and returns tag', () => {
   assert.ok(result.includes(' * @returns Expected return type for this scaffold'));
   assert.ok(result.endsWith(' */'));
 });
+
+test('toJSDOC - custom returnDescription overrides placeholder (TS)', () => {
+  const result = toJSDOC([emailParam], 'boolean', 'ts', 'True if the email is valid');
+  assert.ok(result.includes(' * @returns True if the email is valid'));
+  assert.ok(!result.includes('Expected return type for this scaffold'));
+});
+
+test('toJSDOC - custom returnDescription overrides placeholder (JS)', () => {
+  const result = toJSDOC([emailParam], 'boolean', 'js', 'True if the email is valid');
+  assert.ok(result.includes(' * @returns {boolean} True if the email is valid'));
+  assert.ok(!result.includes('Expected return type for this scaffold'));
+});

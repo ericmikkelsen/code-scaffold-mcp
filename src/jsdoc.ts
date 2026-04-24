@@ -9,15 +9,17 @@ import type { ParamDef, Language } from './types.js';
  * - TypeScript: `@returns description`
  * - JavaScript: `@returns {type} description`
  *
- * @param paramDefs  - Array of parameter definitions
- * @param returnType - TypeScript return type string
- * @param language   - Target language ('ts' or 'js'). Defaults to 'ts'
+ * @param paramDefs         - Array of parameter definitions
+ * @param returnType        - TypeScript return type string
+ * @param language          - Target language ('ts' or 'js'). Defaults to 'ts'
+ * @param returnDescription - Description for the @returns tag. Defaults to a placeholder.
  * @returns Formatted JSDoc block string (including surrounding `/** ... *\/`)
  */
 export function toJSDOC(
   paramDefs: ParamDef[],
   returnType: string,
   language: Language = 'ts',
+  returnDescription = 'Expected return type for this scaffold',
 ): string {
   const lines: string[] = ['/**', ' * TODO: Describe the function purpose.'];
 
@@ -31,9 +33,9 @@ export function toJSDOC(
   }
 
   if (language === 'js') {
-    lines.push(` * @returns {${returnType}} Expected return type for this scaffold`);
+    lines.push(` * @returns {${returnType}} ${returnDescription}`);
   } else {
-    lines.push(` * @returns Expected return type for this scaffold`);
+    lines.push(` * @returns ${returnDescription}`);
   }
 
   lines.push(' */');

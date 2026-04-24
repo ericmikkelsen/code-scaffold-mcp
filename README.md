@@ -23,7 +23,6 @@ const result = scaffoldFunction({
     { name: 'email', tsType: 'string', example: 'dev@example.com', description: 'Email to validate' }
   ],
   outputType: 'boolean',
-  exampleInput: { email: 'dev@example.com' },
   exampleOutput: true,
   language: 'ts',  // or 'js'
 });
@@ -60,7 +59,7 @@ import { validateEmail } from './validateEmail';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
-  assert.equal(validateEmail('dev@example.com'), true);
+  assert.deepEqual(validateEmail('dev@example.com'), true);
 });
 
 test('TODO: add edge cases after implementation', () => {
@@ -87,6 +86,23 @@ export function validateEmail(email) {
 }
 ```
 
+**`validateEmail.test.js`**
+```js
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { validateEmail } from './validateEmail.js';
+
+test('TODO: replace with real behavior tests', () => {
+  // This starter test confirms wiring only.
+  assert.deepEqual(validateEmail('dev@example.com'), true);
+});
+
+test('TODO: add edge cases after implementation', () => {
+  // Example: invalid email cases should be asserted here.
+  assert.ok(true);
+});
+```
+
 ### Writing files to disk
 
 Use Node's built-in `writeFile` to persist the scaffold output to your project:
@@ -101,7 +117,6 @@ const result = scaffoldFunction({
     { name: 'name', tsType: 'string', example: 'Alice', description: 'Name of the user to greet' },
   ],
   outputType: 'string',
-  exampleInput: { name: 'Alice' },
   exampleOutput: 'Hello, Alice!',
   language: 'ts',
 });
@@ -137,7 +152,7 @@ import { greetUser } from './greetUser';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
-  assert.equal(greetUser('Alice'), 'Hello, Alice!');
+  assert.deepEqual(greetUser('Alice'), 'Hello, Alice!');
 });
 
 test('TODO: add edge cases after implementation', () => {
@@ -153,9 +168,22 @@ test('TODO: add edge cases after implementation', () => {
 ```typescript
 type ParamDef = {
   name: string;
-  tsType: string;    // e.g. 'string', 'number', '{ id: string }'
-  example: unknown;  // test fixture value
-  description?: string;
+  tsType: string;        // e.g. 'string', 'number', '{ id: string }'
+  example: unknown;      // test fixture value used in the generated wiring test
+  description?: string;  // appears in the generated JSDoc @param line
+};
+```
+
+### `ScaffoldFunctionConfig`
+
+```typescript
+type ScaffoldFunctionConfig = {
+  name: string;               // valid JS identifier for the function
+  paramDefs: ParamDef[];
+  outputType: string;         // TypeScript return type string
+  returnDescription?: string; // @returns description (defaults to a placeholder)
+  exampleOutput: unknown;     // fixture used in the generated return statement and wiring test
+  language: 'ts' | 'js';
 };
 ```
 
@@ -166,20 +194,59 @@ Converts a `ParamDef` array into a function parameter string.
 - TypeScript: `email: string, count: number`
 - JavaScript: `email, count`
 
-### `toJSDOC(paramDefs, returnType, language?)`
+```typescript
+import { toJSParams } from 'code-scaffold-mcp';
+
+toJSParams([{ name: 'email', tsType: 'string', example: 'a@b.com' }], 'ts');
+// → 'email: string'
+
+toJSParams([{ name: 'email', tsType: 'string', example: 'a@b.com' }], 'js');
+// → 'email'
+```
+
+### `toJSDOC(paramDefs, returnType, language?, returnDescription?)`
 
 Generates a JSDoc comment block.
 
 - TypeScript: `@param name - description` (types already in signature)
 - JavaScript: `@param {type} name - description` (full JSDoc types)
 
-### `testTemplateGenerator(funcName, paramDefs, example, language?)`
+```typescript
+import { toJSDOC } from 'code-scaffold-mcp';
 
-Generates a complete `node:test` test file. Includes a wiring test that uses the example fixture and a placeholder edge-case test.
+toJSDOC(
+  [{ name: 'email', tsType: 'string', example: 'a@b.com', description: 'Email to validate' }],
+  'boolean',
+  'ts',
+  'True if the email address is valid',
+);
+// →
+// /**
+//  * TODO: Describe the function purpose.
+//  * @param email - Email to validate
+//  * @returns True if the email address is valid
+//  */
+```
+
+### `testTemplateGenerator(funcName, paramDefs, exampleOutput, language?)`
+
+Generates a complete `node:test` test file. Includes a wiring test that uses `paramDefs[*].example` as call arguments and `exampleOutput` as the expected value, plus a placeholder edge-case test.
+
+```typescript
+import { testTemplateGenerator } from 'code-scaffold-mcp';
+
+testTemplateGenerator(
+  'validateEmail',
+  [{ name: 'email', tsType: 'string', example: 'dev@example.com' }],
+  true,
+  'ts',
+);
+// → complete node:test source with assert.deepEqual wiring test
+```
 
 ### `scaffoldFunction(config)`
 
-Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`.
+Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`. Throws if `name` is not a valid JavaScript identifier.
 
 ## Scripts
 

@@ -19,7 +19,8 @@ export type ScaffoldFunctionConfig = {
   name: string;
   paramDefs: ParamDef[];
   outputType: string;
-  exampleInput: Record<string, unknown>;
+  /** Optional description for the @returns JSDoc tag. Defaults to a placeholder. */
+  returnDescription?: string;
   exampleOutput: unknown;
   language: Language;
 };

@@ -1,10 +1,5 @@
-import { inspect } from 'node:util';
+import { toSourceLiteral } from './utils.js';
 import type { ParamDef, Language } from './types.js';
-
-/** Serializes a value to a JS source-code literal using single-quote strings. */
-function toSourceLiteral(value: unknown): string {
-  return inspect(value, { depth: 10, compact: true });
-}
 
 /**
  * Generates a node:test file template for a scaffolded function.
@@ -14,21 +9,21 @@ function toSourceLiteral(value: unknown): string {
  * edge-case coverage that must be filled in before the function is
  * considered submission-ready.
  *
- * @param funcName  - Name of the function being tested
- * @param paramDefs - Parameter definitions (used to build the call expression)
- * @param example   - Example input/output pair for the wiring test
- * @param language  - Target language ('ts' or 'js'). Defaults to 'ts'
+ * @param funcName      - Name of the function being tested
+ * @param paramDefs     - Parameter definitions (used to build the call expression)
+ * @param exampleOutput - Expected output value for the wiring test assertion
+ * @param language      - Target language ('ts' or 'js'). Defaults to 'ts'
  * @returns Complete test file source as a string
  */
 export function testTemplateGenerator(
   funcName: string,
   paramDefs: ParamDef[],
-  example: { input: Record<string, unknown>; output: unknown },
+  exampleOutput: unknown,
   language: Language = 'ts',
 ): string {
   const moduleExt = language === 'js' ? `.${language}` : '';
   const callArgs = paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
-  const expectedOutput = toSourceLiteral(example.output);
+  const expectedOutput = toSourceLiteral(exampleOutput);
 
   return [
     `import test from 'node:test';`,
@@ -37,7 +32,7 @@ export function testTemplateGenerator(
     ``,
     `test('TODO: replace with real behavior tests', () => {`,
     `  // This starter test confirms wiring only.`,
-    `  assert.equal(${funcName}(${callArgs}), ${expectedOutput});`,
+    `  assert.deepEqual(${funcName}(${callArgs}), ${expectedOutput});`,
     `});`,
     ``,
     `test('TODO: add edge cases after implementation', () => {`,

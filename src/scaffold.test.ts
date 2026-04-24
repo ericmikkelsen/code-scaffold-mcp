@@ -9,7 +9,6 @@ const tsConfig: ScaffoldFunctionConfig = {
     { name: 'email', tsType: 'string', example: 'dev@example.com', description: 'Email to validate' },
   ],
   outputType: 'boolean',
-  exampleInput: { email: 'dev@example.com' },
   exampleOutput: true,
   language: 'ts',
 };
@@ -131,7 +130,7 @@ test('scaffoldFunction - TS test imports without .ts extension', () => {
 
 test('scaffoldFunction - TS test includes wiring assertion', () => {
   const { testSource } = scaffoldFunction(tsConfig);
-  assert.ok(testSource.includes("assert.equal(validateEmail('dev@example.com'), true);"));
+  assert.ok(testSource.includes("assert.deepEqual(validateEmail('dev@example.com'), true);"));
 });
 
 test('scaffoldFunction - TS test matches spec example exactly', () => {
@@ -143,7 +142,7 @@ test('scaffoldFunction - TS test matches spec example exactly', () => {
     '',
     "test('TODO: replace with real behavior tests', () => {",
     '  // This starter test confirms wiring only.',
-    "  assert.equal(validateEmail('dev@example.com'), true);",
+    "  assert.deepEqual(validateEmail('dev@example.com'), true);",
     '});',
     '',
     "test('TODO: add edge cases after implementation', () => {",
@@ -173,7 +172,7 @@ test('scaffoldFunction - JS test matches spec example exactly', () => {
     '',
     "test('TODO: replace with real behavior tests', () => {",
     '  // This starter test confirms wiring only.',
-    "  assert.equal(validateEmail('dev@example.com'), true);",
+    "  assert.deepEqual(validateEmail('dev@example.com'), true);",
     '});',
     '',
     "test('TODO: add edge cases after implementation', () => {",
@@ -197,7 +196,6 @@ test('scaffoldFunction - multiple params all appear in signature', () => {
       { name: 'age', tsType: 'number', example: 30 },
     ],
     outputType: 'User',
-    exampleInput: { name: 'Alice', age: 30 },
     exampleOutput: { id: '1', name: 'Alice', age: 30 },
     language: 'ts',
   };
@@ -215,11 +213,84 @@ test('scaffoldFunction - object exampleOutput serialized as return value', () =>
     name: 'getUser',
     paramDefs: [{ name: 'id', tsType: 'string', example: '1' }],
     outputType: 'User',
-    exampleInput: { id: '1' },
     exampleOutput: { id: '1', name: 'Alice' },
     language: 'ts',
   };
 
   const { source } = scaffoldFunction(config);
   assert.ok(source.includes("return { id: '1', name: 'Alice' };"));
+});
+
+// ──────────────────────────────────────────────────────────────
+// Object output — generated wiring test uses deepEqual
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - object exampleOutput generates deepEqual in wiring test', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'getUser',
+    paramDefs: [{ name: 'id', tsType: 'string', example: '1' }],
+    outputType: 'User',
+    exampleOutput: { id: '1', name: 'Alice' },
+    language: 'ts',
+  };
+
+  const { testSource } = scaffoldFunction(config);
+  assert.ok(testSource.includes("assert.deepEqual(getUser('1'), { id: '1', name: 'Alice' });"));
+});
+
+// ──────────────────────────────────────────────────────────────
+// Name validation
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - throws on empty name', () => {
+  assert.throws(
+    () => scaffoldFunction({ name: '', paramDefs: [], outputType: 'void', exampleOutput: undefined, language: 'ts' }),
+    /not a valid JavaScript identifier/,
+  );
+});
+
+test('scaffoldFunction - throws on name starting with digit', () => {
+  assert.throws(
+    () => scaffoldFunction({ name: '1bad', paramDefs: [], outputType: 'void', exampleOutput: undefined, language: 'ts' }),
+    /not a valid JavaScript identifier/,
+  );
+});
+
+test('scaffoldFunction - throws on name with hyphens', () => {
+  assert.throws(
+    () => scaffoldFunction({ name: 'my-func', paramDefs: [], outputType: 'void', exampleOutput: undefined, language: 'ts' }),
+    /not a valid JavaScript identifier/,
+  );
+});
+
+// ──────────────────────────────────────────────────────────────
+// returnDescription
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - custom returnDescription appears in JSDoc', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'validateEmail',
+    paramDefs: [{ name: 'email', tsType: 'string', example: 'a@b.com', description: 'Email' }],
+    outputType: 'boolean',
+    returnDescription: 'True if the email address is valid',
+    exampleOutput: true,
+    language: 'ts',
+  };
+
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @returns True if the email address is valid'));
+});
+
+test('scaffoldFunction - returnDescription works in JS mode', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'validateEmail',
+    paramDefs: [{ name: 'email', tsType: 'string', example: 'a@b.com', description: 'Email' }],
+    outputType: 'boolean',
+    returnDescription: 'True if the email address is valid',
+    exampleOutput: true,
+    language: 'js',
+  };
+
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @returns {boolean} True if the email address is valid'));
 });

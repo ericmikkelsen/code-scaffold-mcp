@@ -83,7 +83,6 @@ const result = scaffoldFunction({
     { name: 'input', tsType: 'string', example: 'hello', description: 'The input string' },
   ],
   outputType: 'string',
-  exampleInput: { input: 'hello' },
   exampleOutput: 'HELLO',
 });
 

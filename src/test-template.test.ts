@@ -20,7 +20,7 @@ test('testTemplateGenerator - TypeScript mode correct imports and no extension',
   const result = testTemplateGenerator(
     'validateEmail',
     [emailParam],
-    { input: { email: 'dev@example.com' }, output: true },
+    true,
     'ts',
   );
 
@@ -33,7 +33,7 @@ test('testTemplateGenerator - JavaScript mode import includes .js extension', ()
   const result = testTemplateGenerator(
     'validateEmail',
     [emailParam],
-    { input: { email: 'dev@example.com' }, output: true },
+    true,
     'js',
   );
 
@@ -44,29 +44,29 @@ test('testTemplateGenerator - wiring test uses param example as call arg', () =>
   const result = testTemplateGenerator(
     'validateEmail',
     [emailParam],
-    { input: { email: 'dev@example.com' }, output: true },
+    true,
     'ts',
   );
 
-  assert.ok(result.includes("assert.equal(validateEmail('dev@example.com'), true);"));
+  assert.ok(result.includes("assert.deepEqual(validateEmail('dev@example.com'), true);"));
 });
 
 test('testTemplateGenerator - wiring test serializes non-string output', () => {
   const result = testTemplateGenerator(
     'square',
     [countParam],
-    { input: { count: 5 }, output: 25 },
+    25,
     'ts',
   );
 
-  assert.ok(result.includes('assert.equal(square(5), 25);'));
+  assert.ok(result.includes('assert.deepEqual(square(5), 25);'));
 });
 
 test('testTemplateGenerator - edge-case test references first param name', () => {
   const result = testTemplateGenerator(
     'validateEmail',
     [emailParam],
-    { input: { email: 'dev@example.com' }, output: true },
+    true,
     'ts',
   );
 
@@ -77,7 +77,7 @@ test('testTemplateGenerator - edge-case test with multiple params uses first par
   const result = testTemplateGenerator(
     'fn',
     [emailParam, countParam],
-    { input: { email: 'a@b.com', count: 5 }, output: 0 },
+    0,
     'ts',
   );
 
@@ -85,7 +85,7 @@ test('testTemplateGenerator - edge-case test with multiple params uses first par
 });
 
 test('testTemplateGenerator - no params falls back to "input" in edge-case comment', () => {
-  const result = testTemplateGenerator('fn', [], { input: {}, output: null }, 'ts');
+  const result = testTemplateGenerator('fn', [], null, 'ts');
   assert.ok(result.includes('// Example: invalid input cases should be asserted here.'));
 });
 
@@ -93,18 +93,18 @@ test('testTemplateGenerator - multiple params are all passed to call expression'
   const result = testTemplateGenerator(
     'fn',
     [emailParam, countParam],
-    { input: { email: 'a@b.com', count: 5 }, output: true },
+    true,
     'ts',
   );
 
-  assert.ok(result.includes("assert.equal(fn('dev@example.com', 5), true);"));
+  assert.ok(result.includes("assert.deepEqual(fn('dev@example.com', 5), true);"));
 });
 
 test('testTemplateGenerator - defaults to TypeScript mode', () => {
   const result = testTemplateGenerator(
     'fn',
     [emailParam],
-    { input: { email: 'a@b.com' }, output: false },
+    false,
   );
 
   assert.ok(result.includes("import { fn } from './fn';"));
@@ -115,9 +115,20 @@ test('testTemplateGenerator - output ends with trailing newline', () => {
   const result = testTemplateGenerator(
     'fn',
     [emailParam],
-    { input: { email: 'x' }, output: true },
+    true,
     'ts',
   );
 
   assert.ok(result.endsWith('\n'));
+});
+
+test('testTemplateGenerator - object output uses deepEqual assertion', () => {
+  const result = testTemplateGenerator(
+    'getUser',
+    [{ name: 'id', tsType: 'string', example: '1' }],
+    { id: '1', name: 'Alice' },
+    'ts',
+  );
+
+  assert.ok(result.includes("assert.deepEqual(getUser('1'), { id: '1', name: 'Alice' });"));
 });
