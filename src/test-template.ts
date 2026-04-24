@@ -1,0 +1,49 @@
+import { inspect } from 'node:util';
+import type { ParamDef, Language } from './types.js';
+
+/** Serializes a value to a JS source-code literal using single-quote strings. */
+function toSourceLiteral(value: unknown): string {
+  return inspect(value, { depth: 10, compact: true });
+}
+
+/**
+ * Generates a node:test file template for a scaffolded function.
+ *
+ * The first test wires the happy-path example so the test suite passes
+ * immediately after scaffolding.  The second test is a placeholder for
+ * edge-case coverage that must be filled in before the function is
+ * considered submission-ready.
+ *
+ * @param funcName  - Name of the function being tested
+ * @param paramDefs - Parameter definitions (used to build the call expression)
+ * @param example   - Example input/output pair for the wiring test
+ * @param language  - Target language ('ts' or 'js'). Defaults to 'ts'
+ * @returns Complete test file source as a string
+ */
+export function testTemplateGenerator(
+  funcName: string,
+  paramDefs: ParamDef[],
+  example: { input: Record<string, unknown>; output: unknown },
+  language: Language = 'ts',
+): string {
+  const moduleExt = language === 'js' ? `.${language}` : '';
+  const callArgs = paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
+  const expectedOutput = toSourceLiteral(example.output);
+
+  return [
+    `import test from 'node:test';`,
+    `import assert from 'node:assert/strict';`,
+    `import { ${funcName} } from './${funcName}${moduleExt}';`,
+    ``,
+    `test('TODO: replace with real behavior tests', () => {`,
+    `  // This starter test confirms wiring only.`,
+    `  assert.equal(${funcName}(${callArgs}), ${expectedOutput});`,
+    `});`,
+    ``,
+    `test('TODO: add edge cases after implementation', () => {`,
+    `  // Example: invalid ${paramDefs[0]?.name ?? 'input'} cases should be asserted here.`,
+    `  assert.ok(true);`,
+    `});`,
+    ``,
+  ].join('\n');
+}

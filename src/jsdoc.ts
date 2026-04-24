@@ -1,0 +1,41 @@
+import type { ParamDef, Language } from './types.js';
+
+/**
+ * Generates a JSDoc comment block from a list of ParamDef objects and a return type.
+ *
+ * Language differences:
+ * - TypeScript: `@param name - description` (no type — already in signature)
+ * - JavaScript: `@param {type} name - description` (full JSDoc types for tooling)
+ * - TypeScript: `@returns description`
+ * - JavaScript: `@returns {type} description`
+ *
+ * @param paramDefs  - Array of parameter definitions
+ * @param returnType - TypeScript return type string
+ * @param language   - Target language ('ts' or 'js'). Defaults to 'ts'
+ * @returns Formatted JSDoc block string (including surrounding `/** ... *\/`)
+ */
+export function toJSDOC(
+  paramDefs: ParamDef[],
+  returnType: string,
+  language: Language = 'ts',
+): string {
+  const lines: string[] = ['/**', ' * TODO: Describe the function purpose.'];
+
+  for (const p of paramDefs) {
+    const desc = p.description ?? p.name;
+    if (language === 'js') {
+      lines.push(` * @param {${p.tsType}} ${p.name} - ${desc}`);
+    } else {
+      lines.push(` * @param ${p.name} - ${desc}`);
+    }
+  }
+
+  if (language === 'js') {
+    lines.push(` * @returns {${returnType}} Expected return type for this scaffold`);
+  } else {
+    lines.push(` * @returns Expected return type for this scaffold`);
+  }
+
+  lines.push(' */');
+  return lines.join('\n');
+}
