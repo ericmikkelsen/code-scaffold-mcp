@@ -18,6 +18,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test:coverage": "node --import tsx/esm --experimental-test-coverage --test src/*.test.ts",
+    "benchmark:ts": "BENCH_BASE_URL=${BENCH_BASE_URL:-http://localhost:11434/v1} BENCH_MODEL=${BENCH_MODEL:-gemma4} BENCH_CONDITIONS=bare,scaffolded BENCH_LOG_PROMPTS=1 node --import tsx/esm benchmarks/run.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

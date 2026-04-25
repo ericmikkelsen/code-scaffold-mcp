@@ -105,8 +105,11 @@ test('toJSDOC - renders @example tags when name and examples are provided', () =
     { args: [3], output: 6 },
     { args: [0], output: 0 },
   ]);
-  assert.ok(result.includes(' * @example double(3) // => 6'));
-  assert.ok(result.includes(' * @example double(0) // => 0'));
+  assert.ok(result.includes(' * @example'));
+  assert.ok(result.includes(' * // returns 6'));
+  assert.ok(result.includes(' * double(3)'));
+  assert.ok(result.includes(' * // returns 0'));
+  assert.ok(result.includes(' * double(0)'));
   assert.ok(result.endsWith(' */'));
 });
 

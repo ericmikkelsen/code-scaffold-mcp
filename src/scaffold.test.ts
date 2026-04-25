@@ -10,6 +10,9 @@ const tsConfig: ScaffoldFunctionConfig = {
   ],
   outputType: 'boolean',
   exampleOutput: true,
+  examples: [
+    { args: ['invalid'], output: false },
+  ],
   language: 'ts',
 };
 
@@ -43,6 +46,11 @@ test('scaffoldFunction - TS source includes JSDoc without type braces', () => {
   assert.ok(source.includes(' * @param email - Email to validate'));
   assert.ok(!source.includes('{string}'));
   assert.ok(source.includes(' * @returns Expected return type for this scaffold'));
+  assert.ok(source.includes(' * @example'));
+  assert.ok(source.includes(' * // returns true'));
+  assert.ok(source.includes(' * validateEmail("dev@example.com")'));
+  assert.ok(source.includes(' * // returns false'));
+  assert.ok(source.includes(' * validateEmail("invalid")'));
 });
 
 test('scaffoldFunction - TS source has typed function signature', () => {
@@ -62,6 +70,12 @@ test('scaffoldFunction - TS source matches spec example exactly', () => {
     ' * TODO: Describe the function purpose.',
     ' * @param email - Email to validate',
     ' * @returns Expected return type for this scaffold',
+    ' * @example',
+    ' * // returns true',
+    ' * validateEmail("dev@example.com")',
+    ' * @example',
+    ' * // returns false',
+    ' * validateEmail("invalid")',
     ' */',
     'export function validateEmail(email: string): boolean {',
     '  return true;',
@@ -79,6 +93,11 @@ test('scaffoldFunction - JS source includes JSDoc with type braces', () => {
   const { source } = scaffoldFunction(jsConfig);
   assert.ok(source.includes(' * @param {string} email - Email to validate'));
   assert.ok(source.includes(' * @returns {boolean} Expected return type for this scaffold'));
+  assert.ok(source.includes(' * @example'));
+  assert.ok(source.includes(' * // returns true'));
+  assert.ok(source.includes(' * validateEmail("dev@example.com")'));
+  assert.ok(source.includes(' * // returns false'));
+  assert.ok(source.includes(' * validateEmail("invalid")'));
 });
 
 test('scaffoldFunction - JS source has untyped function signature', () => {
@@ -95,6 +114,12 @@ test('scaffoldFunction - JS source matches spec example exactly', () => {
     ' * TODO: Describe the function purpose.',
     ' * @param {string} email - Email to validate',
     ' * @returns {boolean} Expected return type for this scaffold',
+    ' * @example',
+    ' * // returns true',
+    ' * validateEmail("dev@example.com")',
+    ' * @example',
+    ' * // returns false',
+    ' * validateEmail("invalid")',
     ' */',
     'export function validateEmail(email) {',
     '  return true;',

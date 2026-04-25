@@ -31,6 +31,18 @@ import { toSourceLiteral } from '../src/utils.js';
 const BASE_URL = process.env.BENCH_BASE_URL;
 const MODEL = process.env.BENCH_MODEL ?? (BASE_URL ? 'mistral-small' : 'gpt-4o');
 const TEMPERATURE = Number(process.env.BENCH_TEMPERATURE ?? '0');
+const BENCH_CONDITIONS_RAW = process.env.BENCH_CONDITIONS ?? 'bare,scaffolded';
+const BENCH_FIXTURES_RAW = process.env.BENCH_FIXTURES;
+const LOG_PROMPTS = process.env.BENCH_LOG_PROMPTS === '1';
+
+const ANSI = {
+  reset: '\u001b[0m',
+  fgBlack: '\u001b[30m',
+  fgGreen: '\u001b[32m',
+  fgPink: '\u001b[95m',
+  bgBlack: '\u001b[40m',
+  bgPink: '\u001b[105m',
+} as const;
 
 /** Maximum characters of oracle test output retained per result in results.ndjson. */
 const MAX_TEST_OUTPUT_CHARS = 2000;
@@ -80,6 +92,12 @@ const fixtures: Fixture[] = [
       outputType: 'string',
       returnDescription: 'A URL-safe slug derived from the title',
       exampleOutput: 'hello-world',
+      examples: [
+        { args: ['  many   spaces  here  '], output: 'many-spaces-here' },
+        { args: ['Hello, World!'], output: 'hello-world' },
+        { args: ['---weird---title---'], output: 'weird-title' },
+        { args: [''], output: '' },
+      ],
     },
     oracleFile: 'slugify.test.ts',
     barePrompt:
@@ -215,6 +233,7 @@ type Result = {
   condition: Condition;
   model: string;
   temperature: number;
+  llmMs: number | null;
   completionTokens: number | null;
   promptTokens: number | null;
   passed: boolean;
@@ -222,23 +241,60 @@ type Result = {
   error?: string;
 };
 
-function buildExampleLines(config: ScaffoldFunctionConfig): string[] {
-  const mainArgs = config.paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
-  const mainOut = toSourceLiteral(config.exampleOutput);
-  const lines = [`Example: ${config.name}(${mainArgs}) should return ${mainOut}.`];
-  for (const ex of config.examples ?? []) {
-    const args = ex.args.map(toSourceLiteral).join(', ');
-    const out = toSourceLiteral(ex.output);
-    lines.push(`Example: ${config.name}(${args}) should return ${out}.`);
+function parseConditions(raw: string): Condition[] {
+  const requested = raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    throw new Error('BENCH_CONDITIONS is empty. Use a comma-separated list like bare,scaffolded or scaffolded.');
   }
-  return lines;
+
+  const out: Condition[] = [];
+  for (const value of requested) {
+    if (value !== 'bare' && value !== 'scaffolded') {
+      throw new Error(`Invalid BENCH_CONDITIONS value '${value}'. Allowed values: bare, scaffolded.`);
+    }
+    if (!out.includes(value)) {
+      out.push(value);
+    }
+  }
+
+  return out;
 }
 
-function buildScaffoldedPrompt(source: string, config: ScaffoldFunctionConfig): string {
-  const exampleLines = buildExampleLines(config);
+function parseFixtureNames(raw: string | undefined): Set<string> | null {
+  if (!raw) {
+    return null;
+  }
+
+  const names = raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    throw new Error('BENCH_FIXTURES is empty. Use a comma-separated list like clamp,chunk or omit it.');
+  }
+
+  return new Set(names);
+}
+
+function colorForCondition(condition: Condition): string {
+  return condition === 'bare' ? ANSI.fgGreen : ANSI.fgPink;
+}
+
+function logPrompt(fixtureName: string, condition: Condition, prompt: string): void {
+  const color = colorForCondition(condition);
+  const title = `[${fixtureName}] (${condition})`;
+  console.log(`\n${color}${title}${ANSI.reset}`);
+  console.log(`${color}${prompt}${ANSI.reset}\n`);
+}
+
+function buildScaffoldedPrompt(source: string, _config: ScaffoldFunctionConfig): string {
   return [
     'Complete the function implementation by replacing the return statement with correct business logic.',
-    ...exampleLines,
     'Reply with only the completed TypeScript source file — no markdown, no commentary.',
     '',
     '<scaffold>',
@@ -323,44 +379,116 @@ function printTable(results: Result[]): void {
   const rows = results.map((r) => ({
     fixture: r.fixture,
     condition: r.condition,
+    llmSeconds: r.llmMs == null ? '—' : (r.llmMs / 1000).toFixed(2),
     completionTokens: r.completionTokens ?? '—',
     promptTokens: r.promptTokens ?? '—',
     passed: r.passed ? 'pass' : 'FAIL',
   }));
+
   console.log(
     `\nModel: ${MODEL}  Temperature: ${TEMPERATURE}` +
       (BASE_URL ? `  Endpoint: ${BASE_URL}` : '') +
       '\n',
   );
-  console.table(rows);
+
+  // Build custom colored table
+  const fixtureNames = [...new Set(results.map((r) => r.fixture))];
+  const headers = ['fixture', 'condition', 'llmSeconds', 'completionTokens', 'promptTokens', 'Δsecs', 'Δtokens', 'passed'];
+  
+  // Print header
+  const headerRow = headers.map(h => h.padEnd(12)).join('  ');
+  console.log(headerRow);
+  console.log('─'.repeat(headerRow.length));
+
+  // Print rows with color coding
+  for (const row of rows) {
+    const rowStyle = row.condition === 'bare'
+      ? `${ANSI.bgBlack}${ANSI.fgGreen}`
+      : `${ANSI.bgPink}${ANSI.fgBlack}`;
+    
+    // Calculate deltas for this fixture
+    let secondsDelta = '—';
+    let tokensDelta = '—';
+    if (row.condition === 'scaffolded') {
+      const bare = results.find((r) => r.fixture === row.fixture && r.condition === 'bare');
+      const scaff = results.find((r) => r.fixture === row.fixture && r.condition === 'scaffolded');
+      
+      if (bare?.llmMs != null && scaff?.llmMs != null) {
+        const delta = (scaff.llmMs - bare.llmMs) / 1000;
+        const sign = delta > 0 ? '+' : '';
+        secondsDelta = `${sign}${delta.toFixed(2)}`;
+      }
+      
+      if (bare?.completionTokens != null && scaff?.completionTokens != null) {
+        const delta = scaff.completionTokens - bare.completionTokens;
+        const sign = delta > 0 ? '+' : '';
+        tokensDelta = `${sign}${delta}`;
+      }
+    }
+
+    const cells = [
+      row.fixture.padEnd(12),
+      row.condition.padEnd(12),
+      String(row.llmSeconds).padEnd(12),
+      String(row.completionTokens).padEnd(12),
+      String(row.promptTokens).padEnd(12),
+      secondsDelta.padEnd(12),
+      tokensDelta.padEnd(12),
+      row.passed.padEnd(12),
+    ];
+    
+    const coloredRow = `${rowStyle}${cells.join('  ')}${ANSI.reset}`;
+    console.log(coloredRow);
+  }
 
   // Per-fixture summary
-  const fixtureNames = [...new Set(results.map((r) => r.fixture))];
-  console.log('\nDelta (scaffolded - bare) completion tokens:');
-  for (const name of fixtureNames) {
-    const bare = results.find((r) => r.fixture === name && r.condition === 'bare');
-    const scaff = results.find((r) => r.fixture === name && r.condition === 'scaffolded');
-    if (bare?.completionTokens != null && scaff?.completionTokens != null) {
-      const delta = scaff.completionTokens - bare.completionTokens;
-      const sign = delta > 0 ? '+' : '';
-      console.log(
-        `  ${name}: bare=${bare.completionTokens} scaffolded=${scaff.completionTokens} ` +
-          `delta=${sign}${delta}  bare=${bare.passed ? 'pass' : 'FAIL'} scaffolded=${scaff.passed ? 'pass' : 'FAIL'}`,
-      );
+  if (results.some((r) => r.condition === 'bare') && results.some((r) => r.condition === 'scaffolded')) {
+    let totalSecondsDelta = 0;
+    let totalTokensDelta = 0;
+    let secondsPairs = 0;
+    let tokenPairs = 0;
+
+    console.log('\nDelta (scaffolded - bare) completion tokens:');
+    for (const name of fixtureNames) {
+      const bare = results.find((r) => r.fixture === name && r.condition === 'bare');
+      const scaff = results.find((r) => r.fixture === name && r.condition === 'scaffolded');
+      if (bare?.llmMs != null && scaff?.llmMs != null) {
+        totalSecondsDelta += (scaff.llmMs - bare.llmMs) / 1000;
+        secondsPairs += 1;
+      }
+      if (bare?.completionTokens != null && scaff?.completionTokens != null) {
+        const delta = scaff.completionTokens - bare.completionTokens;
+        totalTokensDelta += delta;
+        tokenPairs += 1;
+        const sign = delta > 0 ? '+' : '';
+        console.log(
+          `  ${name}: bare=${bare.completionTokens} scaffolded=${scaff.completionTokens} ` +
+            `delta=${sign}${delta}  bare=${bare.passed ? 'pass' : 'FAIL'} scaffolded=${scaff.passed ? 'pass' : 'FAIL'}`,
+        );
+      }
+    }
+
+    console.log('\nTotal delta (scaffolded - bare):');
+    if (secondsPairs > 0) {
+      const sign = totalSecondsDelta > 0 ? '+' : '';
+      console.log(`  seconds: ${sign}${totalSecondsDelta.toFixed(2)} across ${secondsPairs} fixture pairs`);
+    }
+    if (tokenPairs > 0) {
+      const sign = totalTokensDelta > 0 ? '+' : '';
+      console.log(`  completion tokens: ${sign}${totalTokensDelta} across ${tokenPairs} fixture pairs`);
     }
   }
 
   // Aggregate pass rate per condition — the headline number for the harness.
-  const aggregate = (cond: Condition) => {
-    const subset = results.filter((r) => r.condition === cond);
-    const passes = subset.filter((r) => r.passed).length;
-    return { passes, total: subset.length };
-  };
-  const bareAgg = aggregate('bare');
-  const scaffAgg = aggregate('scaffolded');
   console.log('\nPass rate:');
-  console.log(`  bare:       ${bareAgg.passes}/${bareAgg.total}`);
-  console.log(`  scaffolded: ${scaffAgg.passes}/${scaffAgg.total}`);
+  for (const cond of ['bare', 'scaffolded'] as const) {
+    const subset = results.filter((r) => r.condition === cond);
+    if (subset.length === 0) {
+      continue;
+    }
+    const passes = subset.filter((r) => r.passed).length;
+    console.log(`  ${cond.padEnd(10)} ${passes}/${subset.length}`);
+  }
 }
 
 async function main(): Promise<void> {
@@ -379,10 +507,34 @@ async function main(): Promise<void> {
     // local server without OPENAI_API_KEY.
     apiKey: process.env.OPENAI_API_KEY ?? (BASE_URL ? 'not-needed' : undefined),
   });
+
+  const selectedConditions = parseConditions(BENCH_CONDITIONS_RAW);
+  const selectedFixtureNames = parseFixtureNames(BENCH_FIXTURES_RAW);
+  const selectedFixtures = selectedFixtureNames
+    ? fixtures.filter((f) => selectedFixtureNames.has(f.config.name))
+    : fixtures;
+
+  if (selectedFixtures.length === 0) {
+    const available = fixtures.map((f) => f.config.name).join(', ');
+    throw new Error(`No fixtures selected. BENCH_FIXTURES='${BENCH_FIXTURES_RAW}' did not match any fixture. Available: ${available}`);
+  }
+
+  if (selectedFixtureNames) {
+    const available = new Set(fixtures.map((f) => f.config.name));
+    const unknown = [...selectedFixtureNames].filter((name) => !available.has(name));
+    if (unknown.length > 0) {
+      throw new Error(`Unknown fixtures in BENCH_FIXTURES: ${unknown.join(', ')}`);
+    }
+  }
+
   const results: Result[] = [];
   const startedAt = new Date().toISOString();
 
-  for (const fixture of fixtures) {
+  console.log(
+    `Running fixtures: ${selectedFixtures.map((f) => f.config.name).join(', ')} | conditions: ${selectedConditions.join(', ')}`,
+  );
+
+  for (const fixture of selectedFixtures) {
     const { config, oracleFile, barePrompt } = fixture;
     const scaffold = scaffoldFunction(config);
     const scaffoldedPrompt = buildScaffoldedPrompt(scaffold.source, config);
@@ -390,11 +542,16 @@ async function main(): Promise<void> {
     for (const [condition, prompt] of [
       ['bare', barePrompt],
       ['scaffolded', scaffoldedPrompt],
-    ] as const) {
+    ].filter(([condition]) => selectedConditions.includes(condition as Condition)) as readonly [Condition, string][]) {
       console.log(`\n→ ${config.name} [${condition}] — calling ${MODEL}…`);
+      if (LOG_PROMPTS) {
+        logPrompt(config.name, condition, prompt);
+      }
       let result: Result;
       try {
+        const llmStart = Date.now();
         const { text, completionTokens, promptTokens } = await callLLM(client, prompt);
+        const llmMs = Date.now() - llmStart;
         const cleaned = cleanLLMOutput(text);
         const { passed, output } = runOracle(config.name, condition, cleaned, oracleFile);
         result = {
@@ -402,13 +559,14 @@ async function main(): Promise<void> {
           condition,
           model: MODEL,
           temperature: TEMPERATURE,
+          llmMs,
           completionTokens,
           promptTokens,
           passed,
           testOutput: output.slice(-MAX_TEST_OUTPUT_CHARS),
         };
         console.log(
-          `  tokens=${completionTokens ?? '?'}  passed=${passed}`,
+          `  tokens=${completionTokens ?? '?'}  secs=${(llmMs / 1000).toFixed(2)}  passed=${passed}`,
         );
         if (!passed) {
           console.log(output.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n'));
@@ -419,6 +577,7 @@ async function main(): Promise<void> {
           condition,
           model: MODEL,
           temperature: TEMPERATURE,
+          llmMs: null,
           completionTokens: null,
           promptTokens: null,
           passed: false,

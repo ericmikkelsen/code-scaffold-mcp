@@ -45,7 +45,12 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
   const fileName = `${name}.${language}`;
   const testFileName = `${name}.test.${language}`;
 
-  const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription, name, examples);
+  const allExamples = [
+    { args: paramDefs.map((p) => p.example), output: exampleOutput },
+    ...(examples ?? []),
+  ];
+
+  const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription, name, allExamples);
   const params = toJSParams(paramDefs, language);
   const returnTypeSuffix = language === 'ts' ? `: ${outputType}` : '';
   const returnValue = toSourceLiteral(exampleOutput);

@@ -45,7 +45,9 @@ export function toJSDOC(
     for (const ex of examples) {
       const argsStr = ex.args.map(toSourceLiteral).join(', ');
       const outStr = toSourceLiteral(ex.output);
-      lines.push(` * @example ${name}(${argsStr}) // => ${outStr}`);
+      lines.push(` * @example`);
+      lines.push(` * // returns ${outStr}`);
+      lines.push(` * ${name}(${argsStr})`);
     }
   }
 

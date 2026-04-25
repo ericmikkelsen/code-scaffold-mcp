@@ -65,6 +65,25 @@ Results are written to `benchmarks/results.ndjson` (one JSON line per
 token-delta breakdown and aggregate pass-rate per condition — is printed to
 stdout.
 
+## Low-compute mode
+
+If you want to use less local compute, run fewer conditions and/or fewer fixtures.
+
+```sh
+# Scaffolded-only (roughly half the calls)
+BENCH_CONDITIONS=scaffolded node --import tsx/esm benchmarks/run.ts
+
+# Only selected fixtures
+BENCH_FIXTURES=clamp,chunk,wordCount node --import tsx/esm benchmarks/run.ts
+
+# Combine both for a cheap smoke run
+BENCH_CONDITIONS=scaffolded \
+BENCH_FIXTURES=clamp,chunk,wordCount \
+node --import tsx/esm benchmarks/run.ts
+```
+
+The table now also includes `llmSeconds` (elapsed inference time per request).
+
 ## Fixtures
 
 The harness ships with a varied set of small functions chosen to exercise
