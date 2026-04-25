@@ -4,6 +4,25 @@ import { toJSDOC } from './jsdoc.js';
 import { testTemplateGenerator } from './test-template.js';
 import type { ScaffoldFunctionConfig, ScaffoldFunctionResult } from './types.js';
 
+const JS_RESERVED_WORDS = new Set([
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+  'default', 'delete', 'do', 'else', 'export', 'extends', 'false',
+  'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof',
+  'let', 'new', 'null', 'of', 'return', 'static', 'super', 'switch',
+  'this', 'throw', 'true', 'try', 'typeof', 'undefined', 'var', 'void',
+  'while', 'with', 'yield',
+  'enum', 'implements', 'interface', 'package', 'private', 'protected', 'public',
+]);
+
+function assertValidIdentifier(value: string, label: string): void {
+  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(value)) {
+    throw new Error(`scaffoldFunction: ${label} '${value}' is not a valid JavaScript identifier`);
+  }
+  if (JS_RESERVED_WORDS.has(value)) {
+    throw new Error(`scaffoldFunction: ${label} '${value}' is a reserved JavaScript keyword`);
+  }
+}
+
 /**
  * Scaffolds a complete function with JSDoc and a companion test file.
  *
@@ -13,13 +32,14 @@ import type { ScaffoldFunctionConfig, ScaffoldFunctionResult } from './types.js'
  *
  * @param config - Scaffold configuration (name, params, types, examples, language)
  * @returns `{ fileName, testFileName, source, testSource }` for the scaffold
- * @throws {Error} If `name` is not a valid JavaScript identifier
+ * @throws {Error} If `name` or any param name is not a valid JavaScript identifier or is a reserved keyword
  */
 export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFunctionResult {
   const { name, paramDefs, outputType, returnDescription, exampleOutput, language } = config;
 
-  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
-    throw new Error(`scaffoldFunction: '${name}' is not a valid JavaScript identifier`);
+  assertValidIdentifier(name, 'name');
+  for (const p of paramDefs) {
+    assertValidIdentifier(p.name, 'param name');
   }
 
   const fileName = `${name}.${language}`;

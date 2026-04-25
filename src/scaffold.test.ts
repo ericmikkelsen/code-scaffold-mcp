@@ -263,6 +263,76 @@ test('scaffoldFunction - throws on name with hyphens', () => {
   );
 });
 
+test('scaffoldFunction - throws on reserved keyword as function name', () => {
+  assert.throws(
+    () => scaffoldFunction({ name: 'default', paramDefs: [], outputType: 'void', exampleOutput: undefined, language: 'ts' }),
+    /reserved JavaScript keyword/,
+  );
+});
+
+test('scaffoldFunction - throws on reserved keyword as function name (class)', () => {
+  assert.throws(
+    () => scaffoldFunction({ name: 'class', paramDefs: [], outputType: 'void', exampleOutput: undefined, language: 'ts' }),
+    /reserved JavaScript keyword/,
+  );
+});
+
+// ──────────────────────────────────────────────────────────────
+// Param name validation
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - throws on param name starting with digit', () => {
+  assert.throws(
+    () => scaffoldFunction({
+      name: 'myFunc',
+      paramDefs: [{ name: '1bad', tsType: 'string', example: 'x' }],
+      outputType: 'void',
+      exampleOutput: undefined,
+      language: 'ts',
+    }),
+    /not a valid JavaScript identifier/,
+  );
+});
+
+test('scaffoldFunction - throws on param name with hyphens', () => {
+  assert.throws(
+    () => scaffoldFunction({
+      name: 'myFunc',
+      paramDefs: [{ name: 'my-param', tsType: 'string', example: 'x' }],
+      outputType: 'void',
+      exampleOutput: undefined,
+      language: 'ts',
+    }),
+    /not a valid JavaScript identifier/,
+  );
+});
+
+test('scaffoldFunction - throws on reserved keyword as param name', () => {
+  assert.throws(
+    () => scaffoldFunction({
+      name: 'myFunc',
+      paramDefs: [{ name: 'return', tsType: 'string', example: 'x' }],
+      outputType: 'void',
+      exampleOutput: undefined,
+      language: 'ts',
+    }),
+    /reserved JavaScript keyword/,
+  );
+});
+
+test('scaffoldFunction - throws on reserved keyword as param name (class)', () => {
+  assert.throws(
+    () => scaffoldFunction({
+      name: 'myFunc',
+      paramDefs: [{ name: 'class', tsType: 'string', example: 'x' }],
+      outputType: 'void',
+      exampleOutput: undefined,
+      language: 'ts',
+    }),
+    /reserved JavaScript keyword/,
+  );
+});
+
 // ──────────────────────────────────────────────────────────────
 // returnDescription
 // ──────────────────────────────────────────────────────────────
