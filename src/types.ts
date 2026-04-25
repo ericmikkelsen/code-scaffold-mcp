@@ -26,6 +26,8 @@ export type ScaffoldFunctionConfig = {
   returnDescription?: string;
   /** Concrete JS value used as the placeholder return and in the wiring test assertion */
   exampleOutput: unknown;
+  /** Additional input/output pairs rendered as @example JSDoc tags */
+  examples?: Array<{ args: unknown[]; output: unknown }>;
   /** Output language for the generated source and test files */
   language: Language;
 };

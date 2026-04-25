@@ -50,13 +50,6 @@ test('scaffoldFunction - TS source has typed function signature', () => {
   assert.ok(source.includes('export function validateEmail(email: string): boolean {'));
 });
 
-test('scaffoldFunction - TS source includes TODO comment and example comments', () => {
-  const { source } = scaffoldFunction(tsConfig);
-  assert.ok(source.includes('// TODO: implement business logic'));
-  assert.ok(source.includes('// Example input from scaffold config: { "email": "dev@example.com" }'));
-  assert.ok(source.includes('// Example output from scaffold config: true'));
-});
-
 test('scaffoldFunction - TS source returns exampleOutput as placeholder', () => {
   const { source } = scaffoldFunction(tsConfig);
   assert.ok(source.includes('return true;'));
@@ -71,10 +64,6 @@ test('scaffoldFunction - TS source matches spec example exactly', () => {
     ' * @returns Expected return type for this scaffold',
     ' */',
     'export function validateEmail(email: string): boolean {',
-    '  // TODO: implement business logic',
-    '  // Example input from scaffold config: { "email": "dev@example.com" }',
-    '  // Example output from scaffold config: true',
-    '',
     '  return true;',
     '}',
     '',
@@ -108,10 +97,6 @@ test('scaffoldFunction - JS source matches spec example exactly', () => {
     ' * @returns {boolean} Expected return type for this scaffold',
     ' */',
     'export function validateEmail(email) {',
-    '  // TODO: implement business logic',
-    '  // Example input from scaffold config: { "email": "dev@example.com" }',
-    '  // Example output from scaffold config: true',
-    '',
     '  return true;',
     '}',
     '',

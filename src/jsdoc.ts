@@ -1,3 +1,4 @@
+import { toSourceLiteral } from './utils.js';
 import type { ParamDef, Language } from './types.js';
 
 /**
@@ -20,6 +21,8 @@ export function toJSDOC(
   returnType: string,
   language: Language = 'ts',
   returnDescription = 'Expected return type for this scaffold',
+  name?: string,
+  examples?: Array<{ args: unknown[]; output: unknown }>,
 ): string {
   const lines: string[] = ['/**', ' * TODO: Describe the function purpose.'];
 
@@ -36,6 +39,14 @@ export function toJSDOC(
     lines.push(` * @returns {${returnType}} ${returnDescription}`);
   } else {
     lines.push(` * @returns ${returnDescription}`);
+  }
+
+  if (name && examples && examples.length > 0) {
+    for (const ex of examples) {
+      const argsStr = ex.args.map(toSourceLiteral).join(', ');
+      const outStr = toSourceLiteral(ex.output);
+      lines.push(` * @example ${name}(${argsStr}) // => ${outStr}`);
+    }
   }
 
   lines.push(' */');

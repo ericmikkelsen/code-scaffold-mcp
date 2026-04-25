@@ -99,3 +99,23 @@ test('toJSDOC - custom returnDescription overrides placeholder (JS)', () => {
   assert.ok(result.includes(' * @returns {boolean} True if the email is valid'));
   assert.ok(!result.includes('Expected return type for this scaffold'));
 });
+
+test('toJSDOC - renders @example tags when name and examples are provided', () => {
+  const result = toJSDOC([countParam], 'number', 'ts', undefined, 'double', [
+    { args: [3], output: 6 },
+    { args: [0], output: 0 },
+  ]);
+  assert.ok(result.includes(' * @example double(3) // => 6'));
+  assert.ok(result.includes(' * @example double(0) // => 0'));
+  assert.ok(result.endsWith(' */'));
+});
+
+test('toJSDOC - no @example tags when examples array is empty', () => {
+  const result = toJSDOC([countParam], 'number', 'ts', undefined, 'double', []);
+  assert.ok(!result.includes('@example'));
+});
+
+test('toJSDOC - no @example tags when name is omitted', () => {
+  const result = toJSDOC([countParam], 'number', 'ts', undefined, undefined, [{ args: [1], output: 2 }]);
+  assert.ok(!result.includes('@example'));
+});
