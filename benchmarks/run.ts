@@ -6,9 +6,9 @@
  *
  * Run against a local Ollama server (OpenAI-compatible endpoint):
  *   ollama serve &
- *   ollama pull qwen2.5-coder:1.5b
+ *   ollama pull mistral-small
  *   BENCH_BASE_URL=http://localhost:11434/v1 \
- *     BENCH_MODEL=qwen2.5-coder:1.5b \
+ *     BENCH_MODEL=mistral-small \
  *     node --import tsx/esm benchmarks/run.ts
  *
  * For each fixture, sends two single-shot prompts (bare vs scaffolded) to the
@@ -26,9 +26,10 @@ import { tmpdir } from 'node:os';
 import OpenAI from 'openai';
 import { scaffoldFunction } from '../src/index.js';
 import type { ScaffoldFunctionConfig } from '../src/index.js';
+import { toSourceLiteral } from '../src/utils.js';
 
 const BASE_URL = process.env.BENCH_BASE_URL;
-const MODEL = process.env.BENCH_MODEL ?? (BASE_URL ? 'qwen2.5-coder:1.5b' : 'gpt-4o');
+const MODEL = process.env.BENCH_MODEL ?? (BASE_URL ? 'mistral-small' : 'gpt-4o');
 const TEMPERATURE = Number(process.env.BENCH_TEMPERATURE ?? '0');
 
 /** Maximum characters of oracle test output retained per result in results.ndjson. */
@@ -98,6 +99,9 @@ const fixtures: Fixture[] = [
       outputType: 'T[][]',
       returnDescription: 'An array of chunks, each at most `size` long',
       exampleOutput: [[1, 2], [3, 4]],
+      examples: [
+        { args: [[1, 2, 3], 0], output: [] },
+      ],
     },
     oracleFile: 'chunk.test.ts',
     barePrompt:
@@ -218,19 +222,28 @@ type Result = {
   error?: string;
 };
 
-function buildScaffoldedPrompt(source: string, testSource: string): string {
+function buildExampleLines(config: ScaffoldFunctionConfig): string[] {
+  const mainArgs = config.paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
+  const mainOut = toSourceLiteral(config.exampleOutput);
+  const lines = [`Example: ${config.name}(${mainArgs}) should return ${mainOut}.`];
+  for (const ex of config.examples ?? []) {
+    const args = ex.args.map(toSourceLiteral).join(', ');
+    const out = toSourceLiteral(ex.output);
+    lines.push(`Example: ${config.name}(${args}) should return ${out}.`);
+  }
+  return lines;
+}
+
+function buildScaffoldedPrompt(source: string, config: ScaffoldFunctionConfig): string {
+  const exampleLines = buildExampleLines(config);
   return [
-    'Here is a TypeScript scaffold. Replace the TODO with a correct implementation.',
-    'Keep the existing exported function signature and JSDoc. ',
+    'Complete the function implementation by replacing the return statement with correct business logic.',
+    ...exampleLines,
     'Reply with only the completed TypeScript source file — no markdown, no commentary.',
     '',
     '<scaffold>',
     source,
     '</scaffold>',
-    '',
-    '<test>',
-    testSource,
-    '</test>',
   ].join('\n');
 }
 
@@ -354,7 +367,7 @@ async function main(): Promise<void> {
   if (!BASE_URL && !process.env.OPENAI_API_KEY) {
     console.error('OPENAI_API_KEY is not set; the benchmark cannot run.');
     console.error('Set OPENAI_API_KEY and re-run, or point at a local OpenAI-compatible server:');
-    console.error('  BENCH_BASE_URL=http://localhost:11434/v1 BENCH_MODEL=qwen2.5-coder:1.5b \\');
+    console.error('  BENCH_BASE_URL=http://localhost:11434/v1 BENCH_MODEL=mistral-small \\');
     console.error('    node --import tsx/esm benchmarks/run.ts');
     process.exit(1);
   }
@@ -372,7 +385,7 @@ async function main(): Promise<void> {
   for (const fixture of fixtures) {
     const { config, oracleFile, barePrompt } = fixture;
     const scaffold = scaffoldFunction(config);
-    const scaffoldedPrompt = buildScaffoldedPrompt(scaffold.source, scaffold.testSource);
+    const scaffoldedPrompt = buildScaffoldedPrompt(scaffold.source, config);
 
     for (const [condition, prompt] of [
       ['bare', barePrompt],

@@ -29,16 +29,16 @@ it at the local URL.
 ```sh
 # One-time setup:
 ollama serve &              # in another terminal, or as a service
-ollama pull qwen2.5-coder:1.5b   # or any other small instruct/coder model
+ollama pull mistral-small   # or any other small instruct/coder model
 
 # Run the harness:
 BENCH_BASE_URL=http://localhost:11434/v1 \
-  BENCH_MODEL=qwen2.5-coder:1.5b \
+   BENCH_MODEL=mistral-small \
   node --import tsx/esm benchmarks/run.ts
 ```
 
 When `BENCH_BASE_URL` is set the harness no longer requires `OPENAI_API_KEY`.
-Any small coder model that fits on your machine works (`qwen2.5-coder:1.5b`,
+Any small coder model that fits on your machine works (`mistral-small`,
 `qwen2.5-coder:3b`, `llama3.2:3b`, `phi3:mini`, etc.). Smaller models are the
 interesting case for this harness — they have the most to gain from a tightly
 constrained prompt.
