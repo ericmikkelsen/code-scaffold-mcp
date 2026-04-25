@@ -4,17 +4,16 @@ This file contains conventions and rules that all contributors — human or AI �
 
 ---
 
-## Development Phases
+## Plan
 
-Every contribution moves through these phases in order. The sections below cover each phase in detail.
+The library is being built in four phases. Each phase ships as one or more PRs and adds a distinct scaffold target.
 
-| Phase | What happens | Relevant section |
+| Phase | Scope | Status |
 |---|---|---|
-| **1. Scaffold** | Use `scaffoldFunction` to generate the `.ts` source and `.test.ts` files from a `ScaffoldFunctionConfig`. | [Scaffolding New Functions](#scaffolding-new-functions) |
-| **2. Implement** | Replace the `// TODO` placeholder in the generated source with the real business logic. | — |
-| **3. Test** | Run the full test suite; extend the generated wiring test with meaningful behavior and edge-case tests. | [General Coding Conventions](#general-coding-conventions) |
-| **4. Review** | Apply both the Senior Developer and Junior Developer review lenses before marking the PR ready. | [Code Review](#code-review) |
-| **5. Release** | Commit and title the PR following Conventional Commits so the automated versioning workflow picks the right semver bump. | [Conventional Commits](#conventional-commits) |
+| **1. Functions** | `scaffoldFunction` — generates typed function source + `node:test` template for TS and JS targets. | ✅ Done |
+| **2. Components** | `scaffoldComponent` — generates UI component skeletons (e.g. React/Vue) with props types and a render stub. | 🔲 Planned |
+| **3. Schemas** | `scaffoldSchema` — generates schema definitions (e.g. Zod, JSON Schema) from a field-definition config. | 🔲 Planned |
+| **4. MCP Server** | Expose all scaffold generators as an MCP-compliant server so agents can call them over the Model Context Protocol. | 🔲 Planned |
 
 ---
 
