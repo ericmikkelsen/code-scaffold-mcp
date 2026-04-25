@@ -44,7 +44,7 @@ console.log(result.testSource);   // generated node:test template
  */
 export function validateEmail(email: string): boolean {
   // TODO: implement business logic
-  // Example input from scaffold config: { email: 'dev@example.com' }
+  // Example input from scaffold config: { "email": "dev@example.com" }
   // Example output from scaffold config: true
 
   return true;
@@ -59,7 +59,7 @@ import { validateEmail } from './validateEmail.js';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
-  assert.deepEqual(validateEmail('dev@example.com'), true);
+  assert.deepEqual(validateEmail("dev@example.com"), true);
 });
 
 test('TODO: add edge cases after implementation', () => {
@@ -79,7 +79,7 @@ test('TODO: add edge cases after implementation', () => {
  */
 export function validateEmail(email) {
   // TODO: implement business logic
-  // Example input from scaffold config: { email: 'dev@example.com' }
+  // Example input from scaffold config: { "email": "dev@example.com" }
   // Example output from scaffold config: true
 
   return true;
@@ -94,7 +94,7 @@ import { validateEmail } from './validateEmail.js';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
-  assert.deepEqual(validateEmail('dev@example.com'), true);
+  assert.deepEqual(validateEmail("dev@example.com"), true);
 });
 
 test('TODO: add edge cases after implementation', () => {
@@ -137,10 +137,10 @@ console.log(`Created ${result.fileName} and ${result.testFileName}`);
  */
 export function greetUser(name: string): string {
   // TODO: implement business logic
-  // Example input from scaffold config: { name: 'Alice' }
-  // Example output from scaffold config: 'Hello, Alice!'
+  // Example input from scaffold config: { "name": "Alice" }
+  // Example output from scaffold config: "Hello, Alice!"
 
-  return 'Hello, Alice!';
+  return "Hello, Alice!";
 }
 ```
 
@@ -148,11 +148,11 @@ export function greetUser(name: string): string {
 ```ts
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { greetUser } from './greetUser';
+import { greetUser } from './greetUser.js';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
-  assert.deepEqual(greetUser('Alice'), 'Hello, Alice!');
+  assert.deepEqual(greetUser("Alice"), "Hello, Alice!");
 });
 
 test('TODO: add edge cases after implementation', () => {
@@ -246,7 +246,45 @@ testTemplateGenerator(
 
 ### `scaffoldFunction(config)`
 
-Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`. Throws if `name` is not a valid JavaScript identifier.
+Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`. Throws if `name` or any param `name` is not a valid JavaScript identifier or is a reserved keyword.
+
+## Error handling
+
+`scaffoldFunction` validates inputs before generating any output. It throws a descriptive `Error` for:
+
+- **Invalid identifiers** — function name or param name is empty, starts with a digit, or contains non-identifier characters:
+
+  ```ts
+  scaffoldFunction({ name: 'my-func', ... });
+  // Error: scaffoldFunction: name 'my-func' is not a valid JavaScript identifier
+
+  scaffoldFunction({ name: 'ok', paramDefs: [{ name: '1bad', ... }], ... });
+  // Error: scaffoldFunction: param name '1bad' is not a valid JavaScript identifier
+  ```
+
+- **Reserved keywords** — function name or param name is a JavaScript reserved word:
+
+  ```ts
+  scaffoldFunction({ name: 'return', ... });
+  // Error: scaffoldFunction: name 'return' is a reserved JavaScript keyword
+  ```
+
+`toSourceLiteral` (used internally for `example` and `exampleOutput` values) throws a `TypeError` if a value cannot be represented as a valid JS literal:
+
+- Non-finite numbers (`Infinity`, `NaN`)
+- Non-plain objects (`Map`, `Set`, `Date`, class instances)
+- Functions, symbols, or bigints
+- Circular references
+
+  ```ts
+  scaffoldFunction({ ..., exampleOutput: new Date() });
+  // TypeError: toSourceLiteral only supports plain objects, arrays, and primitive JSON-like values.
+
+  scaffoldFunction({ ..., exampleOutput: Infinity });
+  // TypeError: toSourceLiteral only supports finite numbers.
+  ```
+
+Stick to JSON-like values (`null`, `undefined`, booleans, finite numbers, strings, arrays, and plain objects) for `example` and `exampleOutput`.
 
 ## Scripts
 

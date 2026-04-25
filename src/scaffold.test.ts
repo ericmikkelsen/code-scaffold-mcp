@@ -53,7 +53,7 @@ test('scaffoldFunction - TS source has typed function signature', () => {
 test('scaffoldFunction - TS source includes TODO comment and example comments', () => {
   const { source } = scaffoldFunction(tsConfig);
   assert.ok(source.includes('// TODO: implement business logic'));
-  assert.ok(source.includes("// Example input from scaffold config: { email: 'dev@example.com' }"));
+  assert.ok(source.includes('// Example input from scaffold config: { "email": "dev@example.com" }'));
   assert.ok(source.includes('// Example output from scaffold config: true'));
 });
 
@@ -72,7 +72,7 @@ test('scaffoldFunction - TS source matches spec example exactly', () => {
     ' */',
     'export function validateEmail(email: string): boolean {',
     '  // TODO: implement business logic',
-    "  // Example input from scaffold config: { email: 'dev@example.com' }",
+    '  // Example input from scaffold config: { "email": "dev@example.com" }',
     '  // Example output from scaffold config: true',
     '',
     '  return true;',
@@ -109,7 +109,7 @@ test('scaffoldFunction - JS source matches spec example exactly', () => {
     ' */',
     'export function validateEmail(email) {',
     '  // TODO: implement business logic',
-    "  // Example input from scaffold config: { email: 'dev@example.com' }",
+    '  // Example input from scaffold config: { "email": "dev@example.com" }',
     '  // Example output from scaffold config: true',
     '',
     '  return true;',
@@ -123,14 +123,14 @@ test('scaffoldFunction - JS source matches spec example exactly', () => {
 // TS test source output
 // ──────────────────────────────────────────────────────────────
 
-test('scaffoldFunction - TS test imports without .ts extension', () => {
+test('scaffoldFunction - TS test imports with .js extension', () => {
   const { testSource } = scaffoldFunction(tsConfig);
-  assert.ok(testSource.includes("import { validateEmail } from './validateEmail';"));
+  assert.ok(testSource.includes("import { validateEmail } from './validateEmail.js';"));
 });
 
 test('scaffoldFunction - TS test includes wiring assertion', () => {
   const { testSource } = scaffoldFunction(tsConfig);
-  assert.ok(testSource.includes("assert.deepEqual(validateEmail('dev@example.com'), true);"));
+  assert.ok(testSource.includes('assert.deepEqual(validateEmail("dev@example.com"), true);'));
 });
 
 test('scaffoldFunction - TS test matches spec example exactly', () => {
@@ -138,11 +138,11 @@ test('scaffoldFunction - TS test matches spec example exactly', () => {
   const expected = [
     "import test from 'node:test';",
     "import assert from 'node:assert/strict';",
-    "import { validateEmail } from './validateEmail';",
+    "import { validateEmail } from './validateEmail.js';",
     '',
     "test('TODO: replace with real behavior tests', () => {",
     '  // This starter test confirms wiring only.',
-    "  assert.deepEqual(validateEmail('dev@example.com'), true);",
+    '  assert.deepEqual(validateEmail("dev@example.com"), true);',
     '});',
     '',
     "test('TODO: add edge cases after implementation', () => {",
@@ -172,7 +172,7 @@ test('scaffoldFunction - JS test matches spec example exactly', () => {
     '',
     "test('TODO: replace with real behavior tests', () => {",
     '  // This starter test confirms wiring only.',
-    "  assert.deepEqual(validateEmail('dev@example.com'), true);",
+    '  assert.deepEqual(validateEmail("dev@example.com"), true);',
     '});',
     '',
     "test('TODO: add edge cases after implementation', () => {",
@@ -218,7 +218,7 @@ test('scaffoldFunction - object exampleOutput serialized as return value', () =>
   };
 
   const { source } = scaffoldFunction(config);
-  assert.ok(source.includes("return { id: '1', name: 'Alice' };"));
+  assert.ok(source.includes('return { "id": "1", "name": "Alice" };'));
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ test('scaffoldFunction - object exampleOutput generates deepEqual in wiring test
   };
 
   const { testSource } = scaffoldFunction(config);
-  assert.ok(testSource.includes("assert.deepEqual(getUser('1'), { id: '1', name: 'Alice' });"));
+  assert.ok(testSource.includes('assert.deepEqual(getUser("1"), { "id": "1", "name": "Alice" });'));
 });
 
 // ──────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ const countParam: ParamDef = {
   example: 5,
 };
 
-test('testTemplateGenerator - TypeScript mode correct imports and no extension', () => {
+test('testTemplateGenerator - TypeScript mode correct imports with .js extension', () => {
   const result = testTemplateGenerator(
     'validateEmail',
     [emailParam],
@@ -26,7 +26,7 @@ test('testTemplateGenerator - TypeScript mode correct imports and no extension',
 
   assert.ok(result.includes("import test from 'node:test';"));
   assert.ok(result.includes("import assert from 'node:assert/strict';"));
-  assert.ok(result.includes("import { validateEmail } from './validateEmail';"));
+  assert.ok(result.includes("import { validateEmail } from './validateEmail.js';"));
 });
 
 test('testTemplateGenerator - JavaScript mode import includes .js extension', () => {
@@ -48,7 +48,7 @@ test('testTemplateGenerator - wiring test uses param example as call arg', () =>
     'ts',
   );
 
-  assert.ok(result.includes("assert.deepEqual(validateEmail('dev@example.com'), true);"));
+  assert.ok(result.includes('assert.deepEqual(validateEmail("dev@example.com"), true);'));
 });
 
 test('testTemplateGenerator - wiring test serializes non-string output', () => {
@@ -97,7 +97,7 @@ test('testTemplateGenerator - multiple params are all passed to call expression'
     'ts',
   );
 
-  assert.ok(result.includes("assert.deepEqual(fn('dev@example.com', 5), true);"));
+  assert.ok(result.includes('assert.deepEqual(fn("dev@example.com", 5), true);'));
 });
 
 test('testTemplateGenerator - defaults to TypeScript mode', () => {
@@ -107,8 +107,8 @@ test('testTemplateGenerator - defaults to TypeScript mode', () => {
     false,
   );
 
-  assert.ok(result.includes("import { fn } from './fn';"));
-  assert.ok(!result.includes("import { fn } from './fn.js';"));
+  assert.ok(result.includes("import { fn } from './fn.js';"));
+  assert.ok(!result.includes("import { fn } from './fn'"));
 });
 
 test('testTemplateGenerator - output ends with trailing newline', () => {
@@ -130,5 +130,5 @@ test('testTemplateGenerator - object output uses deepEqual assertion', () => {
     'ts',
   );
 
-  assert.ok(result.includes("assert.deepEqual(getUser('1'), { id: '1', name: 'Alice' });"));
+  assert.ok(result.includes('assert.deepEqual(getUser("1"), { "id": "1", "name": "Alice" });'));
 });
