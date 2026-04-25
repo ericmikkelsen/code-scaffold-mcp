@@ -246,7 +246,7 @@ testTemplateGenerator(
 
 ### `scaffoldFunction(config)`
 
-Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`. Throws if `name` or any param `name` is not a valid JavaScript identifier or is a reserved keyword.
+Main scaffold generator. Combines all helpers to produce `{ fileName, testFileName, source, testSource }`. Throws if the function `name` or any parameter `name` is not a valid JavaScript identifier or is a reserved keyword.
 
 ## Error handling
 

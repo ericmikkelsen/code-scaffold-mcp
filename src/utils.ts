@@ -39,7 +39,7 @@ function serializeSourceLiteral(value: unknown, seen: Set<object>): string {
   seen.add(value as object);
   try {
     if (Array.isArray(value)) {
-      return `[${(value as unknown[]).map((item) => serializeSourceLiteral(item, seen)).join(', ')}]`;
+      return `[${value.map((item) => serializeSourceLiteral(item, seen)).join(', ')}]`;
     }
 
     if (!isPlainObject(value)) {
