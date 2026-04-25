@@ -55,7 +55,7 @@ export function validateEmail(email: string): boolean {
 ```ts
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateEmail } from './validateEmail';
+import { validateEmail } from './validateEmail.js';
 
 test('TODO: replace with real behavior tests', () => {
   // This starter test confirms wiring only.
