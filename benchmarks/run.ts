@@ -1,8 +1,15 @@
 /**
  * Benchmark harness: scaffolded vs. bare prompts for LLM function generation.
  *
- * Run:
+ * Run against OpenAI:
  *   OPENAI_API_KEY=sk-... node --import tsx/esm benchmarks/run.ts
+ *
+ * Run against a local Ollama server (OpenAI-compatible endpoint):
+ *   ollama serve &
+ *   ollama pull qwen2.5-coder:1.5b
+ *   BENCH_BASE_URL=http://localhost:11434/v1 \
+ *     BENCH_MODEL=qwen2.5-coder:1.5b \
+ *     node --import tsx/esm benchmarks/run.ts
  *
  * For each fixture, sends two single-shot prompts (bare vs scaffolded) to the
  * configured LLM, writes the resulting source to a temp file, runs the hidden
@@ -20,7 +27,8 @@ import OpenAI from 'openai';
 import { scaffoldFunction } from '../src/index.js';
 import type { ScaffoldFunctionConfig } from '../src/index.js';
 
-const MODEL = process.env.BENCH_MODEL ?? 'gpt-4o';
+const BASE_URL = process.env.BENCH_BASE_URL;
+const MODEL = process.env.BENCH_MODEL ?? (BASE_URL ? 'qwen2.5-coder:1.5b' : 'gpt-4o');
 const TEMPERATURE = Number(process.env.BENCH_TEMPERATURE ?? '0');
 
 /** Maximum characters of oracle test output retained per result in results.ndjson. */
@@ -97,6 +105,102 @@ const fixtures: Fixture[] = [
       '`chunk<T>(arr: T[], size: number): T[][]` that splits an array into chunks ' +
       'of at most `size` items. The last chunk may be shorter. ' +
       'Reply with only a single TypeScript file containing `export function chunk<T>(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'fizzbuzz',
+      language: 'ts',
+      paramDefs: [
+        { name: 'n', tsType: 'number', example: 5, description: 'How many entries to generate, starting at 1' },
+      ],
+      outputType: 'string[]',
+      returnDescription: 'An array of length `n` with classic FizzBuzz strings for 1..n',
+      exampleOutput: ['1', '2', 'Fizz', '4', 'Buzz'],
+    },
+    oracleFile: 'fizzbuzz.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `fizzbuzz` with signature ' +
+      '`fizzbuzz(n: number): string[]` that returns an array of length `n` containing ' +
+      'the classic FizzBuzz output for the integers 1..n. For each i: if i is divisible ' +
+      'by both 3 and 5 the entry is "FizzBuzz"; if divisible by only 3 it is "Fizz"; ' +
+      'if divisible by only 5 it is "Buzz"; otherwise the decimal string of i. ' +
+      'Reply with only a single TypeScript file containing `export function fizzbuzz(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'isPalindrome',
+      language: 'ts',
+      paramDefs: [
+        { name: 'text', tsType: 'string', example: 'Race car', description: 'The string to test' },
+      ],
+      outputType: 'boolean',
+      returnDescription: 'True if `text` reads the same forwards and backwards (case- and punctuation-insensitive)',
+      exampleOutput: true,
+    },
+    oracleFile: 'isPalindrome.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `isPalindrome` with signature ' +
+      '`isPalindrome(text: string): boolean` that returns true if `text` reads the ' +
+      'same forwards and backwards after lowercasing and removing all non-alphanumeric ' +
+      'characters. The empty string counts as a palindrome. ' +
+      'Reply with only a single TypeScript file containing `export function isPalindrome(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'flatten',
+      language: 'ts',
+      paramDefs: [
+        { name: 'arr', tsType: 'T[][]', example: [[1, 2], [3, 4]], description: 'An array of arrays to flatten one level' },
+      ],
+      outputType: 'T[]',
+      returnDescription: 'A new array with all sub-array elements concatenated, in order',
+      exampleOutput: [1, 2, 3, 4],
+    },
+    oracleFile: 'flatten.test.ts',
+    barePrompt:
+      'Implement a generic TypeScript function called `flatten` with signature ' +
+      '`flatten<T>(arr: T[][]): T[]` that concatenates the contents of each ' +
+      'sub-array into a single flat array, preserving order. Only one level of ' +
+      'flattening — nested sub-arrays remain nested. ' +
+      'Reply with only a single TypeScript file containing `export function flatten<T>(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'wordCount',
+      language: 'ts',
+      paramDefs: [
+        { name: 'text', tsType: 'string', example: 'hello world', description: 'The string whose words should be counted' },
+      ],
+      outputType: 'number',
+      returnDescription: 'The number of whitespace-separated, non-empty word tokens in `text`',
+      exampleOutput: 2,
+    },
+    oracleFile: 'wordCount.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `wordCount` with signature ' +
+      '`wordCount(text: string): number` that returns the number of whitespace-separated ' +
+      'word tokens in `text`. Leading, trailing and runs of internal whitespace must not ' +
+      'create empty tokens. An all-whitespace or empty string returns 0. ' +
+      'Reply with only a single TypeScript file containing `export function wordCount(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'unique',
+      language: 'ts',
+      paramDefs: [
+        { name: 'arr', tsType: 'T[]', example: [1, 2, 2, 3, 1], description: 'The array to deduplicate' },
+      ],
+      outputType: 'T[]',
+      returnDescription: 'A new array containing each value from `arr` only once, in first-seen order',
+      exampleOutput: [1, 2, 3],
+    },
+    oracleFile: 'unique.test.ts',
+    barePrompt:
+      'Implement a generic TypeScript function called `unique` with signature ' +
+      '`unique<T>(arr: T[]): T[]` that returns a new array containing each value ' +
+      'from `arr` only once, preserving the order of first occurrence. Use SameValueZero ' +
+      'equality (i.e. the same equality semantics as `Set`). ' +
+      'Reply with only a single TypeScript file containing `export function unique<T>(...)` — no markdown, no commentary.',
   },
 ];
 
@@ -185,6 +289,10 @@ function runOracle(
 
   const sourcePath = join(workDir, `${fixtureName}.ts`);
   const testPath = join(workDir, `${fixtureName}.test.ts`);
+  // Mark the temp dir as ESM so tsx resolves `./<name>.js` imports against the
+  // adjacent `.ts` source instead of falling back to CJS resolution (which
+  // would always fail with MODULE_NOT_FOUND).
+  writeFileSync(join(workDir, 'package.json'), '{"type":"module"}\n');
   writeFileSync(sourcePath, source);
   copyFileSync(join(ORACLE_DIR, oracleFile), testPath);
 
@@ -206,7 +314,11 @@ function printTable(results: Result[]): void {
     promptTokens: r.promptTokens ?? '—',
     passed: r.passed ? 'pass' : 'FAIL',
   }));
-  console.log(`\nModel: ${MODEL}  Temperature: ${TEMPERATURE}\n`);
+  console.log(
+    `\nModel: ${MODEL}  Temperature: ${TEMPERATURE}` +
+      (BASE_URL ? `  Endpoint: ${BASE_URL}` : '') +
+      '\n',
+  );
   console.table(rows);
 
   // Per-fixture summary
@@ -224,16 +336,36 @@ function printTable(results: Result[]): void {
       );
     }
   }
+
+  // Aggregate pass rate per condition — the headline number for the harness.
+  const aggregate = (cond: Condition) => {
+    const subset = results.filter((r) => r.condition === cond);
+    const passes = subset.filter((r) => r.passed).length;
+    return { passes, total: subset.length };
+  };
+  const bareAgg = aggregate('bare');
+  const scaffAgg = aggregate('scaffolded');
+  console.log('\nPass rate:');
+  console.log(`  bare:       ${bareAgg.passes}/${bareAgg.total}`);
+  console.log(`  scaffolded: ${scaffAgg.passes}/${scaffAgg.total}`);
 }
 
 async function main(): Promise<void> {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!BASE_URL && !process.env.OPENAI_API_KEY) {
     console.error('OPENAI_API_KEY is not set; the benchmark cannot run.');
-    console.error('Set OPENAI_API_KEY and re-run: node --import tsx/esm benchmarks/run.ts');
+    console.error('Set OPENAI_API_KEY and re-run, or point at a local OpenAI-compatible server:');
+    console.error('  BENCH_BASE_URL=http://localhost:11434/v1 BENCH_MODEL=qwen2.5-coder:1.5b \\');
+    console.error('    node --import tsx/esm benchmarks/run.ts');
     process.exit(1);
   }
 
-  const client = new OpenAI();
+  const client = new OpenAI({
+    baseURL: BASE_URL,
+    // Ollama (and most OpenAI-compatible servers) ignore the key but the SDK
+    // requires a non-empty string. Fall back to a placeholder when targeting a
+    // local server without OPENAI_API_KEY.
+    apiKey: process.env.OPENAI_API_KEY ?? (BASE_URL ? 'not-needed' : undefined),
+  });
   const results: Result[] = [];
   const startedAt = new Date().toISOString();
 
