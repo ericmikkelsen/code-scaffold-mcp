@@ -141,3 +141,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Benchmark output (append-only, not committed)
+benchmarks/results.ndjson
