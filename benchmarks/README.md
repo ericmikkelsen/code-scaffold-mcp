@@ -89,16 +89,20 @@ The table now also includes `llmSeconds` (elapsed inference time per request).
 The harness ships with a varied set of small functions chosen to exercise
 different shapes of code-generation problem:
 
-| Fixture        | Signature                                      | Why it's here |
-| -------------- | ---------------------------------------------- | ------------- |
-| `clamp`        | `(value, min, max: number) => number`          | Trivial branching, baseline |
-| `slugify`      | `(title: string) => string`                    | Regex / string normalization, easy to get subtly wrong |
-| `chunk`        | `<T>(arr: T[], size: number) => T[][]`         | Generic, loop-with-bounds |
-| `fizzbuzz`     | `(n: number) => string[]`                      | Classic specification, needs exact output strings |
-| `isPalindrome` | `(text: string) => boolean`                    | Case- and punctuation-insensitivity is the gotcha |
-| `flatten`      | `<T>(arr: T[][]) => T[]`                       | Generic, must flatten exactly one level |
-| `wordCount`    | `(text: string) => number`                     | Edge cases around empty / whitespace strings |
-| `unique`       | `<T>(arr: T[]) => T[]`                         | Order preservation + SameValueZero (NaN) |
+| Fixture          | Signature                                                         | Why it's here |
+| ---------------- | ----------------------------------------------------------------- | ------------- |
+| `clamp`          | `(value, min, max: number) => number`                             | Trivial branching, baseline |
+| `slugify`        | `(title: string) => string`                                       | Regex / string normalization, easy to get subtly wrong |
+| `chunk`          | `<T>(arr: T[], size: number) => T[][]`                            | Generic, loop-with-bounds |
+| `fizzbuzz`       | `(n: number) => string[]`                                         | Classic specification, needs exact output strings |
+| `isPalindrome`   | `(text: string) => boolean`                                       | Case- and punctuation-insensitivity is the gotcha |
+| `flatten`        | `<T>(arr: T[][]) => T[]`                                          | Generic, must flatten exactly one level |
+| `wordCount`      | `(text: string) => number`                                        | Edge cases around empty / whitespace strings |
+| `unique`         | `<T>(arr: T[]) => T[]`                                            | Order preservation + SameValueZero (NaN) |
+| `coerce`         | `(value: string \| number) => number`                             | Union param type; NaN edge cases |
+| `safeUpperCase`  | `(value: string \| null) => string`                               | Nullable param type; null-handling branch |
+| `applyAll`       | `(items: string[], transform: (item: string) => string) => string[]` | Arrow-function param type; immutability |
+| `lookup`         | `(record: Record<string, string>, key: string) => string \| null` | Record param + union return type |
 
 ## Interpreting results
 

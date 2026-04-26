@@ -224,6 +224,83 @@ const fixtures: Fixture[] = [
       'equality (i.e. the same equality semantics as `Set`). ' +
       'Reply with only a single TypeScript file containing `export function unique<T>(...)` — no markdown, no commentary.',
   },
+  {
+    config: {
+      name: 'coerce',
+      language: 'ts',
+      paramDefs: [
+        { name: 'value', tsType: 'string | number', example: '42', description: 'The value to coerce' },
+      ],
+      outputType: 'number',
+      returnDescription: 'The numeric value; strings are parsed via Number()',
+      exampleOutput: 42,
+    },
+    oracleFile: 'coerce.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `coerce` with signature ' +
+      '`coerce(value: string | number): number` that returns the numeric value. ' +
+      'When value is already a number, return it unchanged. When value is a string, ' +
+      'parse it using Number() — so "42" becomes 42, "3.14" becomes 3.14, and ' +
+      'non-numeric strings produce NaN. ' +
+      'Reply with only a single TypeScript file containing `export function coerce(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'safeUpperCase',
+      language: 'ts',
+      paramDefs: [
+        { name: 'value', tsType: 'string | null', example: 'hello', description: 'The string to uppercase, or null' },
+      ],
+      outputType: 'string',
+      returnDescription: "The uppercased string, or '' when value is null",
+      exampleOutput: 'HELLO',
+    },
+    oracleFile: 'safeUpperCase.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `safeUpperCase` with signature ' +
+      '`safeUpperCase(value: string | null): string` that returns the uppercased version ' +
+      "of value. When value is null, return an empty string. " +
+      'Reply with only a single TypeScript file containing `export function safeUpperCase(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'applyAll',
+      language: 'ts',
+      paramDefs: [
+        { name: 'items', tsType: 'string[]', example: ['a', 'b', 'c'], description: 'Array of strings to transform' },
+        { name: 'transform', tsType: '(item: string) => string', example: null, description: 'Function applied to each item' },
+      ],
+      outputType: 'string[]',
+      returnDescription: 'A new array with transform applied to every element of items',
+      exampleOutput: ['A', 'B', 'C'],
+    },
+    oracleFile: 'applyAll.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `applyAll` with signature ' +
+      '`applyAll(items: string[], transform: (item: string) => string): string[]` that ' +
+      'returns a new array produced by calling transform on every element of items. ' +
+      'An empty items array returns an empty array. The original array must not be mutated. ' +
+      'Reply with only a single TypeScript file containing `export function applyAll(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'lookup',
+      language: 'ts',
+      paramDefs: [
+        { name: 'record', tsType: 'Record<string, string>', example: { a: '1', b: '2' }, description: 'The object to search' },
+        { name: 'key', tsType: 'string', example: 'a', description: 'The key to find' },
+      ],
+      outputType: 'string | null',
+      returnDescription: 'The value for key, or null if the key is not present',
+      exampleOutput: '1',
+    },
+    oracleFile: 'lookup.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `lookup` with signature ' +
+      '`lookup(record: Record<string, string>, key: string): string | null` that ' +
+      'returns the string value stored at key in record, or null if the key is absent. ' +
+      'Reply with only a single TypeScript file containing `export function lookup(...)` — no markdown, no commentary.',
+  },
 ];
 
 type Condition = 'bare' | 'scaffolded';
