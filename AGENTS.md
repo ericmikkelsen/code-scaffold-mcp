@@ -12,9 +12,9 @@ The library is being built in five phases. Each phase ships as one or more PRs a
 |---|---|---|
 | **1. Functions** | `scaffoldFunction` — generates typed function source + `node:test` template for TS and JS targets. | ✅ Done |
 | **2. Components** | `scaffoldComponent` — generates UI component skeletons (e.g. React/Vue) with props types and a render stub. | 🔲 Planned |
-| **3. Schemas** | `scaffoldSchema` — generates schema definitions (e.g. Zod, JSON Schema) from a field-definition config. | 🔲 Planned |
-| **4. MCP Server** | Expose all scaffold generators as an MCP-compliant server so agents can call them over the Model Context Protocol. | 🔲 Planned |
-| **5. Skill/Scaffold Hybrid** | Add behavior-focused prompt skill cards layered on top of minimal scaffolds to improve pass rate per token for edge-case-heavy tasks. | 🔲 Planned |
+| **3. Skill/Scaffold Hybrid** | Add behavior-focused prompt skill cards layered on top of minimal scaffolds to improve pass rate per token for edge-case-heavy tasks. | 🔲 Planned |
+| **4. Schemas** | `scaffoldSchema` — generates schema definitions (e.g. Zod, JSON Schema) from a field-definition config. | 🔲 Planned |
+| **5. MCP Server** | Expose all scaffold generators as an MCP-compliant server so agents can call them over the Model Context Protocol. | 🔲 Planned |
 
 ---
 
