@@ -1,4 +1,4 @@
-import { toSourceLiteral } from './utils.js';
+import { toSourceLiteral, extractTypeParams } from './utils.js';
 import { toJSParams } from './params.js';
 import { toJSDOC } from './jsdoc.js';
 import { testTemplateGenerator } from './test-template.js';
@@ -44,6 +44,7 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
     exampleOutput,
     returnPlaceholder,
     examples,
+    typeParams,
     language,
   } = config;
 
@@ -65,9 +66,24 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
   const returnTypeSuffix = language === 'ts' ? `: ${outputType}` : '';
   const returnValue = returnPlaceholder ?? toSourceLiteral(exampleOutput);
 
+  // Compute generic type param clause for TS mode (e.g. `<T>` or `<K, V>`).
+  // When `typeParams` is explicitly provided it is used verbatim (even if empty,
+  // which suppresses auto-detection). When omitted, type params are auto-detected
+  // from the param types and output type.
+  let typeParamClause = '';
+  if (language === 'ts') {
+    const effectiveTypeParams: string[] =
+      typeParams !== undefined
+        ? typeParams
+        : extractTypeParams([...paramDefs.map((p) => p.tsType), outputType]);
+    if (effectiveTypeParams.length > 0) {
+      typeParamClause = `<${effectiveTypeParams.join(', ')}>`;
+    }
+  }
+
   const source = [
     jsdoc,
-    `export function ${name}(${params})${returnTypeSuffix} {`,
+    `export function ${name}${typeParamClause}(${params})${returnTypeSuffix} {`,
     `  return ${returnValue};`,
     `}`,
     ``,

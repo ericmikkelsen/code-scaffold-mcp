@@ -487,3 +487,114 @@ test('scaffoldFunction - returnPlaceholder generates function wiring assertion i
   assert.ok(testSource.includes("assert.strictEqual(typeof result, 'function', 'makeGreeter should return a function');"));
   assert.ok(!testSource.includes('assert.deepEqual('));
 });
+
+// ──────────────────────────────────────────────────────────────
+// Generic type parameters — auto-detected and emitted in TS mode
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - auto-detects T from param type and emits <T> in TS signature', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'chunk',
+    paramDefs: [
+      { name: 'arr', tsType: 'T[]', example: [1, 2, 3, 4], description: 'Array to chunk' },
+      { name: 'size', tsType: 'number', example: 2, description: 'Chunk size' },
+    ],
+    outputType: 'T[][]',
+    exampleOutput: [[1, 2], [3, 4]],
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function chunk<T>(arr: T[], size: number): T[][] {'));
+});
+
+test('scaffoldFunction - auto-detects T from output type only', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'identity',
+    paramDefs: [
+      { name: 'value', tsType: 'string', example: 'hello' },
+    ],
+    outputType: 'T',
+    exampleOutput: 'hello',
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function identity<T>(value: string): T {'));
+});
+
+test('scaffoldFunction - auto-detects multiple type params in order of appearance', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'mapRecord',
+    paramDefs: [
+      { name: 'record', tsType: 'Record<K, V>', example: { a: 1 }, description: 'Input record' },
+    ],
+    outputType: 'Record<K, V>',
+    exampleOutput: { a: 1 },
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function mapRecord<K, V>(record: Record<K, V>): Record<K, V> {'));
+});
+
+test('scaffoldFunction - explicit typeParams override auto-detection', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'chunk',
+    paramDefs: [
+      { name: 'arr', tsType: 'T[]', example: [1, 2], description: 'Array to chunk' },
+      { name: 'size', tsType: 'number', example: 2, description: 'Chunk size' },
+    ],
+    outputType: 'T[][]',
+    exampleOutput: [[1, 2]],
+    typeParams: ['T extends object'],
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function chunk<T extends object>(arr: T[], size: number): T[][] {'));
+});
+
+test('scaffoldFunction - explicit typeParams empty array suppresses auto-detection', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'chunk',
+    paramDefs: [
+      { name: 'arr', tsType: 'T[]', example: [1, 2], description: 'Array to chunk' },
+      { name: 'size', tsType: 'number', example: 2, description: 'Chunk size' },
+    ],
+    outputType: 'T[][]',
+    exampleOutput: [[1, 2]],
+    typeParams: [],
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function chunk(arr: T[], size: number): T[][] {'));
+  assert.ok(!source.includes('<T>'));
+});
+
+test('scaffoldFunction - generic type params not emitted in JS mode', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'unique',
+    paramDefs: [
+      { name: 'arr', tsType: 'T[]', example: [1, 2, 2, 3], description: 'Array to deduplicate' },
+    ],
+    outputType: 'T[]',
+    exampleOutput: [1, 2, 3],
+    language: 'js',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function unique(arr) {'));
+  assert.ok(!source.includes('<T>'));
+});
+
+test('scaffoldFunction - no generic params emitted when all types are primitive', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'add',
+    paramDefs: [
+      { name: 'a', tsType: 'number', example: 1 },
+      { name: 'b', tsType: 'number', example: 2 },
+    ],
+    outputType: 'number',
+    exampleOutput: 3,
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function add(a: number, b: number): number {'));
+  assert.ok(!source.includes('<'));
+});

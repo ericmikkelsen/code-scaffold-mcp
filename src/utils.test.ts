@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toSourceLiteral } from './utils.js';
+import { toSourceLiteral, extractTypeParams } from './utils.js';
+
+// ──────────────────────────────────────────────────────────────
+// toSourceLiteral
+// ──────────────────────────────────────────────────────────────
 
 test('toSourceLiteral - string value is double-quoted', () => {
   assert.equal(toSourceLiteral('hello'), '"hello"');
@@ -74,4 +78,48 @@ test('toSourceLiteral - throws on circular reference', () => {
   const obj: Record<string, unknown> = {};
   obj['self'] = obj;
   assert.throws(() => toSourceLiteral(obj), TypeError);
+});
+
+// ──────────────────────────────────────────────────────────────
+// extractTypeParams
+// ──────────────────────────────────────────────────────────────
+
+test('extractTypeParams - returns empty array when no uppercase letters found', () => {
+  assert.deepEqual(extractTypeParams(['string', 'number', 'boolean']), []);
+});
+
+test('extractTypeParams - detects T from T[]', () => {
+  assert.deepEqual(extractTypeParams(['T[]']), ['T']);
+});
+
+test('extractTypeParams - detects T from T[][]', () => {
+  assert.deepEqual(extractTypeParams(['T[][]']), ['T']);
+});
+
+test('extractTypeParams - detects T from Array<T>', () => {
+  assert.deepEqual(extractTypeParams(['Array<T>']), ['T']);
+});
+
+test('extractTypeParams - detects multiple params K and V from Map<K, V>', () => {
+  assert.deepEqual(extractTypeParams(['Map<K, V>']), ['K', 'V']);
+});
+
+test('extractTypeParams - deduplicates across multiple type strings', () => {
+  assert.deepEqual(extractTypeParams(['T[]', 'number', 'T[][]']), ['T']);
+});
+
+test('extractTypeParams - preserves order of first appearance across strings', () => {
+  assert.deepEqual(extractTypeParams(['T[]', 'K', 'V']), ['T', 'K', 'V']);
+});
+
+test('extractTypeParams - does not match multi-letter identifiers like Array', () => {
+  assert.deepEqual(extractTypeParams(['Array<string>']), []);
+});
+
+test('extractTypeParams - does not match multi-letter identifiers like Record', () => {
+  assert.deepEqual(extractTypeParams(['Record<string, string>']), []);
+});
+
+test('extractTypeParams - handles empty array input', () => {
+  assert.deepEqual(extractTypeParams([]), []);
 });

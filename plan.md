@@ -5,7 +5,7 @@ The library is being built in five phases. Each phase ships as one or more PRs a
 | Phase | Scope | Effort | Target | Status |
 |---|---|---|---|---|
 | **1. Core Functions MVP** | `ParamDef`, `toJSParams`, `toJSDOC`, `scaffoldFunction`, 100% tests | 4–5 days | Apr 24–28 | ✅ Done |
-| **2. Advanced Types** | Unions, generics, mapped, conditional, tuple, function types | 3–4 days | Apr 29–May 2 | 🔲 Planned |
+| **2. Advanced Types** | Unions, generics, mapped, conditional, tuple, function types | 3–4 days | Apr 29–May 2 | ✅ Done |
 | **3. Skill/Scaffold Hybrid Prompting** | Lean scaffold + behavior skill cards + self-check loop in benchmark harness | 2–3 days | May 3–5 | ✅ Done |
 | **4. Sanity Schema Generator** | `scaffoldSchema` — generates Sanity `defineType()` schema with GROQ example and preview config | 2–3 days | May 6–8 | 🔲 Planned |
 | **5. CLI + MCP Server** | CLI commands + MCP-compliant server + VSCode wiring | 2–3 days | May 9–11 | 🔲 Planned |
