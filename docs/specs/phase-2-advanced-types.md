@@ -65,12 +65,14 @@ TypeScript type strings are not valid JSDoc type expressions:
 | TypeScript `tsType` | Current JS-mode JSDoc output | Correct JSDoc output |
 |---|---|---|
 | `string \| number` | `{string \| number}` | `{(string\|number)}` |
-| `Array<string>` | `{Array<string>}` | `{Array.<string>}` |
-| `Map<string, number>` | `{Map<string, number>}` | `{Map.<string, number>}` |
+| `Array<string>` | `{Array<string>}` | `{Array<string>}` ✓ (modern tooling accepts `<>` directly) |
+| `Map<string, number>` | `{Map<string, number>}` | `{Map<string, number>}` ✓ (modern tooling accepts `<>` directly) |
 | `(x: string) => boolean` | `{(x: string) => boolean}` | `{function(string): boolean}` |
 | `() => void` | `{() => void}` | `{function(): void}` |
 | `[string, number]` | `{[string, number]}` | `{Array}` (JSDoc has no tuple syntax) |
 | `T extends string ? A : B` | `{T extends string ? A : B}` | `{*}` (no JSDoc equivalent) |
+| `any` | `{any}` | `{any}` ✓ (modern tooling understands `any` directly) |
+| `unknown` | `{unknown}` | `{unknown}` ✓ (modern tooling understands `unknown` directly) |
 | `string[]` | `{string[]}` | `{string[]}` ✓ (already correct) |
 | `string` | `{string}` | `{string}` ✓ (already correct) |
 
@@ -92,12 +94,12 @@ This is fine for primitive and object returns, but wrong for function returns �
 
 ## Project Structure
 
-Only **one new file** and **four modifications** to existing files. No new modules beyond `type-utils.ts`. All existing tests must continue to pass.
+Only **one new file** and **four modifications** to existing files. No new modules beyond `type-converter.ts`. All existing tests must continue to pass.
 
 ```
 src/
-  type-utils.ts           ← NEW: tsTypeToJSDoc() converter
-  type-utils.test.ts      ← NEW: tests for the converter
+  type-converter.ts       ← NEW: tsTypeToJSDoc() converter
+  type-converter.test.ts  ← NEW: tests for the converter
 
   jsdoc.ts                ← MODIFIED: use tsTypeToJSDoc() in JS mode
   jsdoc.test.ts           ← MODIFIED: add advanced-type test cases
@@ -128,7 +130,7 @@ Follow Phase 1 conventions exactly:
 
 ## API Design
 
-### 1. New: `src/type-utils.ts` — `tsTypeToJSDoc(tsType: string): string`
+### 1. New: `src/type-converter.ts` — `tsTypeToJSDoc(tsType: string): string`
 
 Converts a TypeScript type string to its JSDoc type expression equivalent for use inside `{…}` in `@param` and `@returns` tags.
 
@@ -145,7 +147,7 @@ Converts a TypeScript type string to its JSDoc type expression equivalent for us
  *
  * @example
  * tsTypeToJSDoc('string | number')   // → '(string|number)'
- * tsTypeToJSDoc('Array<string>')     // → 'Array.<string>'
+ * tsTypeToJSDoc('Array<string>')     // → 'Array<string>'
  * tsTypeToJSDoc('() => void')        // → 'function(): void'
  * tsTypeToJSDoc('string')            // → 'string'
  */
@@ -158,13 +160,12 @@ The function applies a small set of well-ordered transformations. It does **not*
 
 | Pattern | Detection | Output |
 |---|---|---|
-| **Primitives and keywords** | `string`, `number`, `boolean`, `void`, `null`, `undefined`, `never`, `object`, `symbol`, `bigint` | Pass through unchanged |
-| **`any` / `unknown`** | Exact match `'any'` or `'unknown'` | `'*'` |
+| **Primitives and keywords** | `string`, `number`, `boolean`, `void`, `null`, `undefined`, `never`, `any`, `unknown`, `object`, `symbol`, `bigint` | Pass through unchanged — modern TypeScript-aware JSDoc tooling (VS Code, TypeDoc) accepts these directly |
 | **Array shorthand** | Ends with `[]` (e.g. `string[]`, `User[]`) | Pass through unchanged (`{string[]}` is valid JSDoc) |
 | **Tuple** | Starts with `[` (e.g. `[string, number]`) | `'Array'` (JSDoc has no tuple syntax; information goes in `@param` description) |
 | **Conditional** | Contains ` extends ` and ` ? ` | `'*'` (too complex for JSDoc) |
 | **Union** | Contains ` \| ` (outside of angle brackets) | Wrap in parens, remove spaces around `\|`: `'(A\|B)'` |
-| **Generic** | Contains `<` and ends with `>` (e.g. `Array<string>`, `Map<string, number>`) | Insert `.` before `<`: `'Array.<string>'` |
+| **Generic** | Contains `<` and ends with `>` (e.g. `Array<string>`, `Map<string, number>`) | Pass through unchanged — modern tooling accepts `<>` notation directly |
 | **Function with params** | Matches `(…) => ReturnType` | `'function(ParamTypes): ReturnType'` (extract param types, strip names) |
 | **Fallback** | Anything not matched above | Pass through unchanged |
 
@@ -201,9 +202,9 @@ tsTypeToJSDoc('void')             // 'void'
 tsTypeToJSDoc('null')             // 'null'
 tsTypeToJSDoc('undefined')        // 'undefined'
 
-// any / unknown → *
-tsTypeToJSDoc('any')              // '*'
-tsTypeToJSDoc('unknown')          // '*'
+// any / unknown — unchanged (modern tooling understands them directly)
+tsTypeToJSDoc('any')              // 'any'
+tsTypeToJSDoc('unknown')          // 'unknown'
 
 // Array shorthand — unchanged
 tsTypeToJSDoc('string[]')         // 'string[]'
@@ -220,15 +221,15 @@ tsTypeToJSDoc('string | number')           // '(string|number)'
 tsTypeToJSDoc('string | number | boolean') // '(string|number|boolean)'
 tsTypeToJSDoc('string | null')             // '(string|null)'
 
-// Generic → dot notation
-tsTypeToJSDoc('Array<string>')             // 'Array.<string>'
-tsTypeToJSDoc('Promise<void>')             // 'Promise.<void>'
-tsTypeToJSDoc('Map<string, number>')       // 'Map.<string, number>'
-tsTypeToJSDoc('Record<string, number>')    // 'Record.<string, number>'
-tsTypeToJSDoc('Partial<User>')             // 'Partial.<User>'
+// Generic — unchanged (modern tooling accepts <> notation)
+tsTypeToJSDoc('Array<string>')             // 'Array<string>'
+tsTypeToJSDoc('Promise<void>')             // 'Promise<void>'
+tsTypeToJSDoc('Map<string, number>')       // 'Map<string, number>'
+tsTypeToJSDoc('Record<string, number>')    // 'Record<string, number>'
+tsTypeToJSDoc('Partial<User>')             // 'Partial<User>'
 
-// Generic with union inside
-tsTypeToJSDoc('Array<string | number>')    // 'Array.<(string|number)>'
+// Generic with union inside — | inside <> is not a top-level union
+tsTypeToJSDoc('Array<string | number>')    // 'Array<string | number>'
 
 // Function types
 tsTypeToJSDoc('() => void')                      // 'function(): void'
