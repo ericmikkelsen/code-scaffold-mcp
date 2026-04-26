@@ -344,6 +344,88 @@ test('scaffoldFunction - throws on reserved keyword as param name (class)', () =
 });
 
 // ──────────────────────────────────────────────────────────────
+// Advanced types — union, arrow-function, nullable, generics
+// ──────────────────────────────────────────────────────────────
+
+test('scaffoldFunction - union tsType appears verbatim in TS signature', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'coerce',
+    paramDefs: [{ name: 'value', tsType: 'string | number', example: '42', description: 'Value to coerce' }],
+    outputType: 'number',
+    exampleOutput: 42,
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function coerce(value: string | number): number {'));
+});
+
+test('scaffoldFunction - union tsType becomes JSDoc union in JS @param', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'coerce',
+    paramDefs: [{ name: 'value', tsType: 'string | number', example: '42', description: 'Value to coerce' }],
+    outputType: 'number',
+    exampleOutput: 42,
+    language: 'js',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @param {(string|number)} value - Value to coerce'));
+  assert.ok(source.includes('export function coerce(value) {'));
+});
+
+test('scaffoldFunction - arrow-function tsType becomes JSDoc function() in JS @param', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'applyAll',
+    paramDefs: [
+      { name: 'items', tsType: 'string[]', example: ['a'], description: 'Items' },
+      { name: 'transform', tsType: '(item: string) => string', example: null, description: 'Transform fn' },
+    ],
+    outputType: 'string[]',
+    exampleOutput: ['A'],
+    language: 'js',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @param {function(string): string} transform - Transform fn'));
+  assert.ok(source.includes('export function applyAll(items, transform) {'));
+});
+
+test('scaffoldFunction - nullable union tsType becomes JSDoc union in JS @param', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'safeUpperCase',
+    paramDefs: [{ name: 'value', tsType: 'string | null', example: 'hello', description: 'Input or null' }],
+    outputType: 'string',
+    exampleOutput: 'HELLO',
+    language: 'js',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @param {(string|null)} value - Input or null'));
+});
+
+test('scaffoldFunction - generic outputType appears verbatim in TS return suffix', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'fetchUser',
+    paramDefs: [{ name: 'id', tsType: 'string', example: '1', description: 'User ID' }],
+    outputType: 'Promise<string>',
+    exampleOutput: 'alice',
+    language: 'ts',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function fetchUser(id: string): Promise<string> {'));
+});
+
+test('scaffoldFunction - union outputType becomes JSDoc union in JS @returns', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'maybeFind',
+    paramDefs: [{ name: 'key', tsType: 'string', example: 'foo', description: 'Key' }],
+    outputType: 'string | null',
+    returnDescription: 'The value or null if not found',
+    exampleOutput: null,
+    language: 'js',
+  };
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes(' * @returns {(string|null)} The value or null if not found'));
+});
+
+// ──────────────────────────────────────────────────────────────
 // returnDescription
 // ──────────────────────────────────────────────────────────────
 
