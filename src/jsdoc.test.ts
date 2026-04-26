@@ -122,3 +122,43 @@ test('toJSDOC - no @example tags when name is omitted', () => {
   const result = toJSDOC([countParam], 'number', 'ts', undefined, undefined, [{ args: [1], output: 2 }]);
   assert.ok(!result.includes('@example'));
 });
+
+// ──────────────────────────────────────────────────────────────
+// Advanced type conversions in JS mode (via tsTypeToJSDoc)
+// ──────────────────────────────────────────────────────────────
+
+test('toJSDOC - JS mode: union param type wrapped in parens', () => {
+  const param: ParamDef = { name: 'val', tsType: 'string | number', example: 'x' };
+  const result = toJSDOC([param], 'boolean', 'js');
+  assert.ok(result.includes(' * @param {(string|number)} val - val'));
+});
+
+test('toJSDOC - JS mode: union return type wrapped in parens', () => {
+  const result = toJSDOC([], 'string | null', 'js');
+  assert.ok(result.includes(' * @returns {(string|null)}'));
+});
+
+test('toJSDOC - JS mode: function param type converted to JSDoc syntax', () => {
+  const param: ParamDef = { name: 'cb', tsType: '(x: string) => boolean', example: null, description: 'Callback' };
+  const result = toJSDOC([param], 'void', 'js');
+  assert.ok(result.includes(' * @param {function(string): boolean} cb - Callback'));
+});
+
+test('toJSDOC - JS mode: tuple param type becomes Array', () => {
+  const param: ParamDef = { name: 'pair', tsType: '[string, number]', example: ['a', 1] };
+  const result = toJSDOC([param], 'void', 'js');
+  assert.ok(result.includes(' * @param {Array} pair - pair'));
+});
+
+test('toJSDOC - JS mode: generic param type passes through', () => {
+  const param: ParamDef = { name: 'items', tsType: 'Array<string>', example: [] };
+  const result = toJSDOC([param], 'void', 'js');
+  assert.ok(result.includes(' * @param {Array<string>} items - items'));
+});
+
+test('toJSDOC - TS mode: union param type is NOT converted (used as-is)', () => {
+  const param: ParamDef = { name: 'val', tsType: 'string | number', example: 'x' };
+  const result = toJSDOC([param], 'boolean', 'ts');
+  assert.ok(result.includes(' * @param val - val'));
+  assert.ok(!result.includes('{'));
+});

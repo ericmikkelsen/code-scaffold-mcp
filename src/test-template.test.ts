@@ -132,3 +132,17 @@ test('testTemplateGenerator - object output uses deepEqual assertion', () => {
 
   assert.ok(result.includes('assert.deepEqual(getUser("1"), { "id": "1", "name": "Alice" });'));
 });
+
+test('testTemplateGenerator - returnPlaceholder uses function typeof assertion', () => {
+  const result = testTemplateGenerator(
+    'makeGreeter',
+    [{ name: 'prefix', tsType: 'string', example: 'Hello' }],
+    null,
+    'ts',
+    '(_name) => prefix',
+  );
+
+  assert.ok(result.includes('const result = makeGreeter("Hello");'));
+  assert.ok(result.includes("assert.strictEqual(typeof result, 'function', 'makeGreeter should return a function');"));
+  assert.ok(!result.includes('assert.deepEqual('));
+});
