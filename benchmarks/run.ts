@@ -39,10 +39,42 @@ const ANSI = {
   reset: '\u001b[0m',
   fgBlack: '\u001b[30m',
   fgGreen: '\u001b[32m',
+  fgCyan: '\u001b[36m',
   fgPink: '\u001b[95m',
   bgBlack: '\u001b[40m',
   bgPink: '\u001b[105m',
+  bgCyan: '\u001b[46m',
 } as const;
+
+/**
+ * Skill-card registry: maps a behavior tag to ≤3 sentences of imperative
+ * guidance focused on the most common failure mode for that behavior.
+ *
+ * Rules for writing a card:
+ * - Imperative mood, present tense.
+ * - Mention the specific edge case (not just "handle edge cases").
+ * - ≤3 sentences total.
+ */
+const SKILL_CARDS: Record<string, string> = {
+  'bounds':
+    'When size or k is ≤ 0, return [] immediately. Never produce a chunk or slice that extends beyond the array length.',
+  'empty-input':
+    'An empty string or empty array must return the zero-value output (empty string, 0, [], {}) — do not throw.',
+  'nan-handling':
+    'Empty string and non-numeric strings must return NaN — do not coerce to 0.',
+  'ordering':
+    'Sort by the primary key descending, then by the secondary key ascending for ties.',
+  'percent-encoding':
+    'Decode percent-encoded keys and values with decodeURIComponent. A missing "=" means an empty string value.',
+  'null-handling':
+    'When the nullable param is null, return the specified fallback immediately.',
+  'tie-breaking':
+    'Break frequency ties lexicographically ascending (lower letter wins).',
+  'one-level-only':
+    'Flatten exactly one level — do not recursively flatten nested arrays.',
+  'deduplication':
+    'Use SameValueZero equality (Set semantics). Preserve first-seen order.',
+};
 
 /** Maximum characters of oracle test output retained per result in results.ndjson. */
 const MAX_TEST_OUTPUT_CHARS = 2000;
@@ -59,6 +91,12 @@ type Fixture = {
   oracleFile: string;
   /** Bare prompt — what an LLM gets with no scaffold context */
   barePrompt: string;
+  /**
+   * Behavior tags used by the `skill-hybrid` condition to select ≤2 skill
+   * cards from the SKILL_CARDS registry and inject them as targeted guidance.
+   * List the tags whose edge cases are the primary failure mode for this fixture.
+   */
+  behaviorTags?: string[];
 };
 
 const fixtures: Fixture[] = [
@@ -77,6 +115,7 @@ const fixtures: Fixture[] = [
       exampleOutput: 5,
     },
     oracleFile: 'clamp.test.ts',
+    behaviorTags: ['bounds'],
     barePrompt:
       'Implement a TypeScript function called `clamp` that takes ' +
       '(value: number, min: number, max: number): number and returns the value ' +
@@ -102,6 +141,7 @@ const fixtures: Fixture[] = [
       ],
     },
     oracleFile: 'slugify.test.ts',
+    behaviorTags: ['empty-input'],
     barePrompt:
       'Implement a TypeScript function called `slugify` that takes (title: string): string ' +
       'and returns a lowercase, hyphen-separated, URL-safe slug. ' +
@@ -125,6 +165,7 @@ const fixtures: Fixture[] = [
       ],
     },
     oracleFile: 'chunk.test.ts',
+    behaviorTags: ['bounds'],
     barePrompt:
       'Implement a generic TypeScript function called `chunk` with signature ' +
       '`chunk<T>(arr: T[], size: number): T[][]` that splits an array into chunks ' +
@@ -144,6 +185,7 @@ const fixtures: Fixture[] = [
       exampleOutput: ['1', '2', 'Fizz', '4', 'Buzz'],
     },
     oracleFile: 'fizzbuzz.test.ts',
+    behaviorTags: ['empty-input'],
     barePrompt:
       'Implement a TypeScript function called `fizzbuzz` with signature ' +
       '`fizzbuzz(n: number): string[]` that returns an array of length `n` containing ' +
@@ -165,6 +207,7 @@ const fixtures: Fixture[] = [
       exampleOutput: true,
     },
     oracleFile: 'isPalindrome.test.ts',
+    behaviorTags: ['empty-input'],
     barePrompt:
       'Implement a TypeScript function called `isPalindrome` with signature ' +
       '`isPalindrome(text: string): boolean` that returns true if `text` reads the ' +
@@ -185,6 +228,7 @@ const fixtures: Fixture[] = [
       exampleOutput: [1, 2, 3, 4],
     },
     oracleFile: 'flatten.test.ts',
+    behaviorTags: ['one-level-only'],
     barePrompt:
       'Implement a generic TypeScript function called `flatten` with signature ' +
       '`flatten<T>(arr: T[][]): T[]` that concatenates the contents of each ' +
@@ -205,6 +249,7 @@ const fixtures: Fixture[] = [
       exampleOutput: 2,
     },
     oracleFile: 'wordCount.test.ts',
+    behaviorTags: ['empty-input'],
     barePrompt:
       'Implement a TypeScript function called `wordCount` with signature ' +
       '`wordCount(text: string): number` that returns the number of whitespace-separated ' +
@@ -225,6 +270,7 @@ const fixtures: Fixture[] = [
       exampleOutput: [1, 2, 3],
     },
     oracleFile: 'unique.test.ts',
+    behaviorTags: ['deduplication'],
     barePrompt:
       'Implement a generic TypeScript function called `unique` with signature ' +
       '`unique<T>(arr: T[]): T[]` that returns a new array containing each value ' +
@@ -245,6 +291,7 @@ const fixtures: Fixture[] = [
       exampleOutput: 42,
     },
     oracleFile: 'coerce.test.ts',
+    behaviorTags: ['nan-handling', 'empty-input'],
     barePrompt:
       'Implement a TypeScript function called `coerce` with signature ' +
       '`coerce(value: string | number): number` that returns the numeric value. ' +
@@ -266,6 +313,7 @@ const fixtures: Fixture[] = [
       exampleOutput: 'HELLO',
     },
     oracleFile: 'safeUpperCase.test.ts',
+    behaviorTags: ['null-handling'],
     barePrompt:
       'Implement a TypeScript function called `safeUpperCase` with signature ' +
       '`safeUpperCase(value: string | null): string` that returns the uppercased version ' +
@@ -286,6 +334,7 @@ const fixtures: Fixture[] = [
       exampleOutput: ['A', 'B', 'C'],
     },
     oracleFile: 'applyAll.test.ts',
+    behaviorTags: ['empty-input'],
     barePrompt:
       'Implement a TypeScript function called `applyAll` with signature ' +
       '`applyAll(items: string[], transform: (item: string) => string): string[]` that ' +
@@ -307,6 +356,7 @@ const fixtures: Fixture[] = [
       exampleOutput: '1',
     },
     oracleFile: 'lookup.test.ts',
+    behaviorTags: ['null-handling'],
     barePrompt:
       'Implement a TypeScript function called `lookup` with signature ' +
       '`lookup(record: Record<string, string>, key: string): string | null` that ' +
@@ -338,6 +388,7 @@ const fixtures: Fixture[] = [
       ],
     },
     oracleFile: 'mergeIntervals.test.ts',
+    behaviorTags: ['ordering', 'empty-input'],
     barePrompt:
       'Implement a TypeScript function called `mergeIntervals` with signature ' +
       '`mergeIntervals(intervals: { start: number; end: number }[]): { start: number; end: number }[]`. ' +
@@ -366,6 +417,7 @@ const fixtures: Fixture[] = [
       ],
     },
     oracleFile: 'parseQueryString.test.ts',
+    behaviorTags: ['percent-encoding', 'empty-input'],
     barePrompt:
       'Implement a TypeScript function called `parseQueryString` with signature ' +
       '`parseQueryString(query: string): Record<string, string>`. ' +
@@ -400,6 +452,7 @@ const fixtures: Fixture[] = [
       ],
     },
     oracleFile: 'topKFrequent.test.ts',
+    behaviorTags: ['tie-breaking', 'bounds'],
     barePrompt:
       'Implement a TypeScript function called `topKFrequent` with signature ' +
       '`topKFrequent(words: string[], k: number): string[]` that returns the k most frequent words. ' +
@@ -409,7 +462,7 @@ const fixtures: Fixture[] = [
   },
 ];
 
-type Condition = 'bare' | 'scaffolded';
+type Condition = 'bare' | 'scaffolded' | 'skill-hybrid';
 
 type Result = {
   fixture: string;
@@ -436,8 +489,8 @@ function parseConditions(raw: string): Condition[] {
 
   const out: Condition[] = [];
   for (const value of requested) {
-    if (value !== 'bare' && value !== 'scaffolded') {
-      throw new Error(`Invalid BENCH_CONDITIONS value '${value}'. Allowed values: bare, scaffolded.`);
+    if (value !== 'bare' && value !== 'scaffolded' && value !== 'skill-hybrid') {
+      throw new Error(`Invalid BENCH_CONDITIONS value '${value}'. Allowed values: bare, scaffolded, skill-hybrid.`);
     }
     if (!out.includes(value)) {
       out.push(value);
@@ -465,7 +518,9 @@ function parseFixtureNames(raw: string | undefined): Set<string> | null {
 }
 
 function colorForCondition(condition: Condition): string {
-  return condition === 'bare' ? ANSI.fgGreen : ANSI.fgPink;
+  if (condition === 'bare') return ANSI.fgGreen;
+  if (condition === 'skill-hybrid') return ANSI.fgCyan;
+  return ANSI.fgPink;
 }
 
 function logPrompt(fixtureName: string, condition: Condition, prompt: string): void {
@@ -482,20 +537,49 @@ function logResponse(fixtureName: string, condition: Condition, response: string
   console.log(`${color}${response}${ANSI.reset}\n`);
 }
 
-function buildScaffoldedPrompt(source: string, config: ScaffoldFunctionConfig): string {
-  const extraRule =
-    config.name === 'coerce'
-      ? 'Important: coerce("") must return NaN (not 0).'
-      : null;
-
+function buildScaffoldedPrompt(source: string): string {
   return [
     'Complete the function implementation by replacing the return statement with correct business logic.',
-    ...(extraRule ? [extraRule] : []),
     'Reply with only the completed TypeScript source file — no markdown, no commentary.',
     '',
     '<scaffold>',
     source,
     '</scaffold>',
+  ].join('\n');
+}
+
+/**
+ * Builds a skill-hybrid prompt: scaffold source + up to two behavior-specific
+ * skill cards from SKILL_CARDS + a compact self-check block.
+ *
+ * @param source - The scaffolded source returned by scaffoldFunction()
+ * @param behaviorTags - Ordered list of behavior tags from the fixture; the
+ *   first two tags with a matching card in SKILL_CARDS are injected.
+ */
+function buildSkillHybridPrompt(source: string, behaviorTags: string[]): string {
+  const cards = behaviorTags
+    .map((tag) => SKILL_CARDS[tag])
+    .filter((card): card is string => card !== undefined)
+    .slice(0, 2);
+
+  const guidanceBlock =
+    cards.length > 0
+      ? ['<guidance>', ...cards.map((c, i) => `${i + 1}. ${c}`), '</guidance>', '']
+      : [];
+
+  return [
+    'Complete the function implementation by replacing the return statement with correct business logic.',
+    ...guidanceBlock,
+    'Reply with only the completed TypeScript source file — no markdown, no commentary.',
+    '',
+    '<scaffold>',
+    source,
+    '</scaffold>',
+    '',
+    'Before finalizing, silently verify:',
+    '  1. All edge cases mentioned in <guidance> above are handled correctly.',
+    '  2. The return type matches the function signature.',
+    '  3. No placeholder return value remains.',
   ].join('\n');
 }
 
@@ -590,81 +674,91 @@ function printTable(results: Result[]): void {
   // Build custom colored table
   const fixtureNames = [...new Set(results.map((r) => r.fixture))];
   const headers = ['fixture', 'condition', 'llmSeconds', 'completionTokens', 'promptTokens', 'Δsecs', 'Δtokens', 'passed'];
-  
+
   // Print header
-  const headerRow = headers.map(h => h.padEnd(12)).join('  ');
+  const headerRow = headers.map((h) => h.padEnd(14)).join('  ');
   console.log(headerRow);
   console.log('─'.repeat(headerRow.length));
 
   // Print rows with color coding
   for (const row of rows) {
-    const rowStyle = row.condition === 'bare'
-      ? `${ANSI.bgBlack}${ANSI.fgGreen}`
-      : `${ANSI.bgPink}${ANSI.fgBlack}`;
-    
-    // Calculate deltas for this fixture
+    let rowStyle: string;
+    if (row.condition === 'bare') {
+      rowStyle = `${ANSI.bgBlack}${ANSI.fgGreen}`;
+    } else if (row.condition === 'skill-hybrid') {
+      rowStyle = `${ANSI.bgCyan}${ANSI.fgBlack}`;
+    } else {
+      rowStyle = `${ANSI.bgPink}${ANSI.fgBlack}`;
+    }
+
+    // Calculate deltas vs bare for any non-bare condition
     let secondsDelta = '—';
     let tokensDelta = '—';
-    if (row.condition === 'scaffolded') {
+    if (row.condition !== 'bare') {
       const bare = results.find((r) => r.fixture === row.fixture && r.condition === 'bare');
-      const scaff = results.find((r) => r.fixture === row.fixture && r.condition === 'scaffolded');
-      
-      if (bare?.llmMs != null && scaff?.llmMs != null) {
-        const delta = (scaff.llmMs - bare.llmMs) / 1000;
+      const curr = results.find((r) => r.fixture === row.fixture && r.condition === row.condition);
+
+      if (bare?.llmMs != null && curr?.llmMs != null) {
+        const delta = (curr.llmMs - bare.llmMs) / 1000;
         const sign = delta > 0 ? '+' : '';
         secondsDelta = `${sign}${delta.toFixed(2)}`;
       }
-      
-      if (bare?.completionTokens != null && scaff?.completionTokens != null) {
-        const delta = scaff.completionTokens - bare.completionTokens;
+
+      if (bare?.completionTokens != null && curr?.completionTokens != null) {
+        const delta = curr.completionTokens - bare.completionTokens;
         const sign = delta > 0 ? '+' : '';
         tokensDelta = `${sign}${delta}`;
       }
     }
 
     const cells = [
-      row.fixture.padEnd(12),
-      row.condition.padEnd(12),
-      String(row.llmSeconds).padEnd(12),
-      String(row.completionTokens).padEnd(12),
-      String(row.promptTokens).padEnd(12),
-      secondsDelta.padEnd(12),
-      tokensDelta.padEnd(12),
-      row.passed.padEnd(12),
+      row.fixture.padEnd(14),
+      row.condition.padEnd(14),
+      String(row.llmSeconds).padEnd(14),
+      String(row.completionTokens).padEnd(14),
+      String(row.promptTokens).padEnd(14),
+      secondsDelta.padEnd(14),
+      tokensDelta.padEnd(14),
+      row.passed.padEnd(14),
     ];
-    
+
     const coloredRow = `${rowStyle}${cells.join('  ')}${ANSI.reset}`;
     console.log(coloredRow);
   }
 
-  // Per-fixture summary
-  if (results.some((r) => r.condition === 'bare') && results.some((r) => r.condition === 'scaffolded')) {
+  // Per-fixture delta summaries for each non-bare condition vs bare
+  const nonBareConditions: Condition[] = ['scaffolded', 'skill-hybrid'];
+  for (const nonBareCond of nonBareConditions) {
+    if (!results.some((r) => r.condition === 'bare') || !results.some((r) => r.condition === nonBareCond)) {
+      continue;
+    }
+
     let totalSecondsDelta = 0;
     let totalTokensDelta = 0;
     let secondsPairs = 0;
     let tokenPairs = 0;
 
-    console.log('\nDelta (scaffolded - bare) completion tokens:');
+    console.log(`\nDelta (${nonBareCond} - bare) completion tokens:`);
     for (const name of fixtureNames) {
       const bare = results.find((r) => r.fixture === name && r.condition === 'bare');
-      const scaff = results.find((r) => r.fixture === name && r.condition === 'scaffolded');
-      if (bare?.llmMs != null && scaff?.llmMs != null) {
-        totalSecondsDelta += (scaff.llmMs - bare.llmMs) / 1000;
+      const comp = results.find((r) => r.fixture === name && r.condition === nonBareCond);
+      if (bare?.llmMs != null && comp?.llmMs != null) {
+        totalSecondsDelta += (comp.llmMs - bare.llmMs) / 1000;
         secondsPairs += 1;
       }
-      if (bare?.completionTokens != null && scaff?.completionTokens != null) {
-        const delta = scaff.completionTokens - bare.completionTokens;
+      if (bare?.completionTokens != null && comp?.completionTokens != null) {
+        const delta = comp.completionTokens - bare.completionTokens;
         totalTokensDelta += delta;
         tokenPairs += 1;
         const sign = delta > 0 ? '+' : '';
         console.log(
-          `  ${name}: bare=${bare.completionTokens} scaffolded=${scaff.completionTokens} ` +
-            `delta=${sign}${delta}  bare=${bare.passed ? 'pass' : 'FAIL'} scaffolded=${scaff.passed ? 'pass' : 'FAIL'}`,
+          `  ${name}: bare=${bare.completionTokens} ${nonBareCond}=${comp.completionTokens} ` +
+            `delta=${sign}${delta}  bare=${bare.passed ? 'pass' : 'FAIL'} ${nonBareCond}=${comp.passed ? 'pass' : 'FAIL'}`,
         );
       }
     }
 
-    console.log('\nTotal delta (scaffolded - bare):');
+    console.log(`\nTotal delta (${nonBareCond} - bare):`);
     if (secondsPairs > 0) {
       const sign = totalSecondsDelta > 0 ? '+' : '';
       console.log(`  seconds: ${sign}${totalSecondsDelta.toFixed(2)} across ${secondsPairs} fixture pairs`);
@@ -677,13 +771,11 @@ function printTable(results: Result[]): void {
 
   // Aggregate pass rate per condition — the headline number for the harness.
   console.log('\nPass rate:');
-  for (const cond of ['bare', 'scaffolded'] as const) {
+  const uniqueConditions = [...new Set(results.map((r) => r.condition))];
+  for (const cond of uniqueConditions) {
     const subset = results.filter((r) => r.condition === cond);
-    if (subset.length === 0) {
-      continue;
-    }
     const passes = subset.filter((r) => r.passed).length;
-    console.log(`  ${cond.padEnd(10)} ${passes}/${subset.length}`);
+    console.log(`  ${cond.padEnd(12)} ${passes}/${subset.length}`);
   }
 }
 
@@ -733,11 +825,13 @@ async function main(): Promise<void> {
   for (const fixture of selectedFixtures) {
     const { config, oracleFile, barePrompt } = fixture;
     const scaffold = scaffoldFunction(config);
-    const scaffoldedPrompt = buildScaffoldedPrompt(scaffold.source, config);
+    const scaffoldedPrompt = buildScaffoldedPrompt(scaffold.source);
+    const skillHybridPrompt = buildSkillHybridPrompt(scaffold.source, fixture.behaviorTags ?? []);
 
     for (const [condition, prompt] of [
       ['bare', barePrompt],
       ['scaffolded', scaffoldedPrompt],
+      ['skill-hybrid', skillHybridPrompt],
     ].filter(([condition]) => selectedConditions.includes(condition as Condition)) as readonly [Condition, string][]) {
       console.log(`\n→ ${config.name} [${condition}] — calling ${MODEL}…`);
       if (LOG_PROMPTS) {
