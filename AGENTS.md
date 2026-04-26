@@ -6,7 +6,7 @@ This file contains conventions and rules that all contributors — human or AI �
 
 ## Plan
 
-The library is being built in four phases. Each phase ships as one or more PRs and adds a distinct scaffold target.
+The library is being built in five phases. Each phase ships as one or more PRs and adds a distinct scaffold target.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -14,6 +14,7 @@ The library is being built in four phases. Each phase ships as one or more PRs a
 | **2. Components** | `scaffoldComponent` — generates UI component skeletons (e.g. React/Vue) with props types and a render stub. | 🔲 Planned |
 | **3. Schemas** | `scaffoldSchema` — generates schema definitions (e.g. Zod, JSON Schema) from a field-definition config. | 🔲 Planned |
 | **4. MCP Server** | Expose all scaffold generators as an MCP-compliant server so agents can call them over the Model Context Protocol. | 🔲 Planned |
+| **5. Skill/Scaffold Hybrid** | Add behavior-focused prompt skill cards layered on top of minimal scaffolds to improve pass rate per token for edge-case-heavy tasks. | 🔲 Planned |
 
 ---
 

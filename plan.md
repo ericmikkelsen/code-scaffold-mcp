@@ -1,6 +1,6 @@
 # Project Plan
 
-The library is being built in four phases. Each phase ships as one or more PRs and adds a distinct scaffold target.
+The library is being built in five phases. Each phase ships as one or more PRs and adds a distinct scaffold target.
 
 | Phase | Scope | Effort | Target | Status |
 |---|---|---|---|---|
@@ -8,6 +8,7 @@ The library is being built in four phases. Each phase ships as one or more PRs a
 | **2. Advanced Types** | Unions, generics, mapped, conditional, tuple, function types | 3–4 days | Apr 29–May 2 | 🔲 Planned |
 | **3. Sanity Schema Generator** | `scaffoldSchema` — generates Sanity `defineType()` schema with GROQ example and preview config | 2–3 days | May 3–5 | 🔲 Planned |
 | **4. CLI + MCP Server** | CLI commands + MCP-compliant server + VSCode wiring | 2–3 days | May 6–8 | 🔲 Planned |
+| **5. Skill/Scaffold Hybrid Prompting** | Lean scaffold + behavior skill cards + self-check loop in benchmark harness | 2–3 days | May 9–11 | 🔲 Planned |
 
 ---
 
@@ -97,3 +98,21 @@ Response:
 `scaffold_function` — see Phase 1 for request/response shape.
 
 `scaffold_sanity_schema` — see Phase 3 for request/response shape.
+
+---
+
+## Phase 5 — Skill/Scaffold Hybrid Prompting 🔲 Planned
+
+**Goal:** Improve correctness-per-token by combining minimal scaffold output with small, task-specific behavior guidance cards.
+
+**Deliverables:**
+- Add `behaviorTags` metadata on benchmark fixtures.
+- Add a skill-card registry for edge-case-heavy behaviors (ordering, bounds, empty-input handling).
+- Inject at most two relevant skill cards into scaffolded prompts.
+- Add a compact self-check block before final code output.
+- Benchmark A/B runs on `topKFrequent`, `parseQueryString`, and `coerce`.
+
+**Success criteria:**
+- Scaffolded pass rate matches or exceeds current best run.
+- Median scaffolded completion tokens decrease by at least 20% versus the heavy-scaffold baseline.
+- No regression in generated file validity and oracle test execution.

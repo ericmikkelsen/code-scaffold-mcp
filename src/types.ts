@@ -19,6 +19,8 @@ export type Language = 'ts' | 'js';
 export type ScaffoldFunctionConfig = {
   /** Valid JavaScript identifier for the generated function name */
   name: string;
+  /** Optional one-line description used as the JSDoc summary line. When omitted, a TODO placeholder is emitted. */
+  description?: string;
   paramDefs: ParamDef[];
   /** TypeScript return type string, e.g. 'string', 'boolean', 'User' */
   outputType: string;
@@ -26,6 +28,13 @@ export type ScaffoldFunctionConfig = {
   returnDescription?: string;
   /** Concrete JS value used as the placeholder return and in the wiring test assertion */
   exampleOutput: unknown;
+  /**
+   * Optional raw source expression used verbatim in the placeholder return statement.
+   *
+   * Useful for outputs that are not representable as JSON-like literals,
+   * such as function return types.
+   */
+  returnPlaceholder?: string;
   /**
    * Additional input/output pairs rendered as @example JSDoc tags.
    * The primary scaffold example is always derived from paramDefs[].example + exampleOutput.

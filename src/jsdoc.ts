@@ -24,8 +24,10 @@ export function toJSDOC(
   returnDescription = 'Expected return type for this scaffold',
   name?: string,
   examples?: Array<{ args: unknown[]; output: unknown }>,
+  description?: string,
 ): string {
-  const lines: string[] = ['/**', ' * TODO: Describe the function purpose.'];
+  const summaryLine = description ?? 'TODO: Describe the function purpose.';
+  const lines: string[] = ['/**', ` * ${summaryLine}`];
 
   for (const p of paramDefs) {
     const desc = p.description ?? p.name;

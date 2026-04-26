@@ -65,6 +65,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'clamp',
+      description: 'Constrains a number to stay within a minimum and maximum bound.',
       language: 'ts',
       paramDefs: [
         { name: 'value', tsType: 'number', example: 5, description: 'The number to clamp' },
@@ -85,6 +86,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'slugify',
+      description: 'Converts a human-readable title into a lowercase, hyphen-separated, URL-safe slug.',
       language: 'ts',
       paramDefs: [
         { name: 'title', tsType: 'string', example: 'Hello World', description: 'The title to slugify' },
@@ -109,6 +111,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'chunk',
+      description: 'Splits an array into consecutive sub-arrays of at most a given size.',
       language: 'ts',
       paramDefs: [
         { name: 'arr', tsType: 'T[]', example: [1, 2, 3, 4], description: 'The array to split' },
@@ -131,6 +134,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'fizzbuzz',
+      description: 'Returns the classic FizzBuzz sequence as an array of strings for 1..n.',
       language: 'ts',
       paramDefs: [
         { name: 'n', tsType: 'number', example: 5, description: 'How many entries to generate, starting at 1' },
@@ -151,6 +155,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'isPalindrome',
+      description: 'Tests whether a string reads the same forwards and backwards, ignoring case and non-alphanumeric characters.',
       language: 'ts',
       paramDefs: [
         { name: 'text', tsType: 'string', example: 'Race car', description: 'The string to test' },
@@ -170,6 +175,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'flatten',
+      description: 'Concatenates an array of arrays into a single flat array, one level deep.',
       language: 'ts',
       paramDefs: [
         { name: 'arr', tsType: 'T[][]', example: [[1, 2], [3, 4]], description: 'An array of arrays to flatten one level' },
@@ -189,6 +195,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'wordCount',
+      description: 'Counts the number of whitespace-separated word tokens in a string.',
       language: 'ts',
       paramDefs: [
         { name: 'text', tsType: 'string', example: 'hello world', description: 'The string whose words should be counted' },
@@ -208,6 +215,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'unique',
+      description: 'Returns a new array with duplicate values removed, preserving first-seen order.',
       language: 'ts',
       paramDefs: [
         { name: 'arr', tsType: 'T[]', example: [1, 2, 2, 3, 1], description: 'The array to deduplicate' },
@@ -227,12 +235,13 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'coerce',
+      description: 'Converts a string or number to a number; non-numeric strings and empty string return NaN.',
       language: 'ts',
       paramDefs: [
         { name: 'value', tsType: 'string | number', example: '42', description: 'The value to coerce' },
       ],
       outputType: 'number',
-      returnDescription: 'The numeric value; strings are parsed via Number()',
+      returnDescription: 'The numeric value; numbers pass through, numeric strings parse, and empty/non-numeric strings return NaN',
       exampleOutput: 42,
     },
     oracleFile: 'coerce.test.ts',
@@ -240,13 +249,14 @@ const fixtures: Fixture[] = [
       'Implement a TypeScript function called `coerce` with signature ' +
       '`coerce(value: string | number): number` that returns the numeric value. ' +
       'When value is already a number, return it unchanged. When value is a string, ' +
-      'parse it using Number() — so "42" becomes 42, "3.14" becomes 3.14, and ' +
-      'non-numeric strings produce NaN. ' +
+      'convert numeric strings to numbers — so "42" becomes 42 and "3.14" becomes 3.14. ' +
+      'Empty string and non-numeric strings must produce NaN. ' +
       'Reply with only a single TypeScript file containing `export function coerce(...)` — no markdown, no commentary.',
   },
   {
     config: {
       name: 'safeUpperCase',
+      description: 'Uppercases a string, returning an empty string when the input is null.',
       language: 'ts',
       paramDefs: [
         { name: 'value', tsType: 'string | null', example: 'hello', description: 'The string to uppercase, or null' },
@@ -265,6 +275,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'applyAll',
+      description: 'Applies a transform function to every element of an array and returns the results.',
       language: 'ts',
       paramDefs: [
         { name: 'items', tsType: 'string[]', example: ['a', 'b', 'c'], description: 'Array of strings to transform' },
@@ -285,6 +296,7 @@ const fixtures: Fixture[] = [
   {
     config: {
       name: 'lookup',
+      description: 'Returns the value for a key in a string record, or null if the key is absent.',
       language: 'ts',
       paramDefs: [
         { name: 'record', tsType: 'Record<string, string>', example: { a: '1', b: '2' }, description: 'The object to search' },
@@ -300,6 +312,100 @@ const fixtures: Fixture[] = [
       '`lookup(record: Record<string, string>, key: string): string | null` that ' +
       'returns the string value stored at key in record, or null if the key is absent. ' +
       'Reply with only a single TypeScript file containing `export function lookup(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'mergeIntervals',
+      description: 'Merges a list of possibly-overlapping intervals into the minimal set of non-overlapping intervals.',
+      language: 'ts',
+      paramDefs: [
+        {
+          name: 'intervals',
+          tsType: '{ start: number; end: number }[]',
+          example: [
+            { start: 1, end: 3 },
+            { start: 2, end: 6 },
+            { start: 8, end: 10 },
+          ],
+          description: 'Intervals that may overlap or touch',
+        },
+      ],
+      outputType: '{ start: number; end: number }[]',
+      returnDescription: 'A new sorted list of merged non-overlapping intervals',
+      exampleOutput: [
+        { start: 1, end: 6 },
+        { start: 8, end: 10 },
+      ],
+    },
+    oracleFile: 'mergeIntervals.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `mergeIntervals` with signature ' +
+      '`mergeIntervals(intervals: { start: number; end: number }[]): { start: number; end: number }[]`. ' +
+      'Merge overlapping intervals and also merge touching intervals where next.start <= current.end. ' +
+      'Return a new array sorted by start, do not mutate the input array. ' +
+      'Reply with only a single TypeScript file containing `export function mergeIntervals(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'parseQueryString',
+      description: 'Parses a URL query string into a key-value record, keeping the last value for duplicate keys.',
+      language: 'ts',
+      paramDefs: [
+        {
+          name: 'query',
+          tsType: 'string',
+          example: '?page=1&sort=asc',
+          description: 'Raw query string with or without a leading ?',
+        },
+      ],
+      outputType: 'Record<string, string>',
+      returnDescription: 'A decoded key-value map parsed from the query string',
+      exampleOutput: { page: '1', sort: 'asc' },
+      examples: [
+        { args: ['a=1&a=2'], output: { a: '2' } },
+      ],
+    },
+    oracleFile: 'parseQueryString.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `parseQueryString` with signature ' +
+      '`parseQueryString(query: string): Record<string, string>`. ' +
+      'Behavior: ignore a leading "?", split by "&", ignore empty segments, decode percent-encoding for keys and values, ' +
+      'treat a missing "=" as an empty string value, and when a key appears multiple times keep the last value. ' +
+      'Reply with only a single TypeScript file containing `export function parseQueryString(...)` — no markdown, no commentary.',
+  },
+  {
+    config: {
+      name: 'topKFrequent',
+      description: 'Returns the k most frequent words, ranked by frequency descending then lexicographically ascending.',
+      language: 'ts',
+      paramDefs: [
+        {
+          name: 'words',
+          tsType: 'string[]',
+          example: ['i', 'love', 'leetcode', 'i', 'love', 'coding'],
+          description: 'Input words',
+        },
+        {
+          name: 'k',
+          tsType: 'number',
+          example: 2,
+          description: 'Number of words to return; if k <= 0, return an empty array',
+        },
+      ],
+      outputType: 'string[]',
+      returnDescription: 'The k most frequent words, sorted by frequency desc then lexicographically asc; return [] when k <= 0 and all ranked unique words when k exceeds unique count',
+      exampleOutput: ['i', 'love'],
+      examples: [
+        { args: [['a', 'b', 'c'], 0], output: [] },
+      ],
+    },
+    oracleFile: 'topKFrequent.test.ts',
+    barePrompt:
+      'Implement a TypeScript function called `topKFrequent` with signature ' +
+      '`topKFrequent(words: string[], k: number): string[]` that returns the k most frequent words. ' +
+      'Sort by frequency descending, and for ties sort lexicographically ascending. ' +
+      'If k is <= 0 return an empty array; if k is larger than unique words, return all unique words in ranked order. ' +
+      'Reply with only a single TypeScript file containing `export function topKFrequent(...)` — no markdown, no commentary.',
   },
 ];
 
@@ -369,9 +475,22 @@ function logPrompt(fixtureName: string, condition: Condition, prompt: string): v
   console.log(`${color}${prompt}${ANSI.reset}\n`);
 }
 
-function buildScaffoldedPrompt(source: string, _config: ScaffoldFunctionConfig): string {
+function logResponse(fixtureName: string, condition: Condition, response: string): void {
+  const color = colorForCondition(condition);
+  const title = `[${fixtureName}] (${condition}) response`;
+  console.log(`\n${color}${title}${ANSI.reset}`);
+  console.log(`${color}${response}${ANSI.reset}\n`);
+}
+
+function buildScaffoldedPrompt(source: string, config: ScaffoldFunctionConfig): string {
+  const extraRule =
+    config.name === 'coerce'
+      ? 'Important: coerce("") must return NaN (not 0).'
+      : null;
+
   return [
     'Complete the function implementation by replacing the return statement with correct business logic.',
+    ...(extraRule ? [extraRule] : []),
     'Reply with only the completed TypeScript source file — no markdown, no commentary.',
     '',
     '<scaffold>',
@@ -630,6 +749,9 @@ async function main(): Promise<void> {
         const { text, completionTokens, promptTokens } = await callLLM(client, prompt);
         const llmMs = Date.now() - llmStart;
         const cleaned = cleanLLMOutput(text);
+        if (LOG_PROMPTS) {
+          logResponse(config.name, condition, cleaned);
+        }
         const { passed, output } = runOracle(config.name, condition, cleaned, oracleFile);
         result = {
           fixture: config.name,

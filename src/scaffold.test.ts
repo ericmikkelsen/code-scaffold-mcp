@@ -456,3 +456,34 @@ test('scaffoldFunction - returnDescription works in JS mode', () => {
   const { source } = scaffoldFunction(config);
   assert.ok(source.includes(' * @returns {boolean} True if the email address is valid'));
 });
+
+test('scaffoldFunction - returnPlaceholder sets placeholder return expression', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'makeGreeter',
+    paramDefs: [{ name: 'prefix', tsType: 'string', example: 'Hello', description: 'Greeting prefix' }],
+    outputType: '(name: string) => string',
+    exampleOutput: null,
+    returnPlaceholder: '(_name) => prefix',
+    language: 'ts',
+  };
+
+  const { source } = scaffoldFunction(config);
+  assert.ok(source.includes('export function makeGreeter(prefix: string): (name: string) => string {'));
+  assert.ok(source.includes('  return (_name) => prefix;'));
+});
+
+test('scaffoldFunction - returnPlaceholder generates function wiring assertion in test template', () => {
+  const config: ScaffoldFunctionConfig = {
+    name: 'makeGreeter',
+    paramDefs: [{ name: 'prefix', tsType: 'string', example: 'Hello', description: 'Greeting prefix' }],
+    outputType: '(name: string) => string',
+    exampleOutput: null,
+    returnPlaceholder: '(_name) => prefix',
+    language: 'js',
+  };
+
+  const { testSource } = scaffoldFunction(config);
+  assert.ok(testSource.includes('const result = makeGreeter("Hello");'));
+  assert.ok(testSource.includes("assert.strictEqual(typeof result, 'function', 'makeGreeter should return a function');"));
+  assert.ok(!testSource.includes('assert.deepEqual('));
+});

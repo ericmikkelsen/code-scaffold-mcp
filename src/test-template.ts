@@ -20,10 +20,19 @@ export function testTemplateGenerator(
   paramDefs: ParamDef[],
   exampleOutput: unknown,
   language: Language = 'ts',
+  returnPlaceholder?: string,
 ): string {
   const moduleExt = '.js';
   const callArgs = paramDefs.map((p) => toSourceLiteral(p.example)).join(', ');
   const expectedOutput = toSourceLiteral(exampleOutput);
+  const wiringAssertion = returnPlaceholder
+    ? [
+        `  const result = ${funcName}(${callArgs});`,
+        `  assert.strictEqual(typeof result, 'function', '${funcName} should return a function');`,
+      ]
+    : [
+        `  assert.deepEqual(${funcName}(${callArgs}), ${expectedOutput});`,
+      ];
 
   return [
     `import test from 'node:test';`,
@@ -32,7 +41,7 @@ export function testTemplateGenerator(
     ``,
     `test('TODO: replace with real behavior tests', () => {`,
     `  // This starter test confirms wiring only.`,
-    `  assert.deepEqual(${funcName}(${callArgs}), ${expectedOutput});`,
+    ...wiringAssertion,
     `});`,
     ``,
     `test('TODO: add edge cases after implementation', () => {`,

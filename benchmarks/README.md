@@ -103,6 +103,9 @@ different shapes of code-generation problem:
 | `safeUpperCase`  | `(value: string \| null) => string`                               | Nullable param type; null-handling branch |
 | `applyAll`       | `(items: string[], transform: (item: string) => string) => string[]` | Arrow-function param type; immutability |
 | `lookup`         | `(record: Record<string, string>, key: string) => string \| null` | Record param + union return type |
+| `mergeIntervals` | `(intervals: { start: number; end: number }[]) => { start: number; end: number }[]` | Sorting + overlap/touch merge logic |
+| `parseQueryString` | `(query: string) => Record<string, string>`                      | Parsing/decoding rules + repeated-key behavior |
+| `topKFrequent`   | `(words: string[], k: number) => string[]`                         | Frequency counting + deterministic tie-break ranking |
 
 ## Interpreting results
 

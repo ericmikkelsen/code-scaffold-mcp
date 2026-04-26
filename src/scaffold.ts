@@ -35,7 +35,17 @@ function assertValidIdentifier(value: string, label: string): void {
  * @throws {Error} If `name` or any param name is not a valid JavaScript identifier or is a reserved keyword
  */
 export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFunctionResult {
-  const { name, paramDefs, outputType, returnDescription, exampleOutput, examples, language } = config;
+  const {
+    name,
+    description,
+    paramDefs,
+    outputType,
+    returnDescription,
+    exampleOutput,
+    returnPlaceholder,
+    examples,
+    language,
+  } = config;
 
   assertValidIdentifier(name, 'name');
   for (const p of paramDefs) {
@@ -50,10 +60,10 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
     ...(examples ?? []),
   ];
 
-  const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription, name, allExamples);
+  const jsdoc = toJSDOC(paramDefs, outputType, language, returnDescription, name, allExamples, description);
   const params = toJSParams(paramDefs, language);
   const returnTypeSuffix = language === 'ts' ? `: ${outputType}` : '';
-  const returnValue = toSourceLiteral(exampleOutput);
+  const returnValue = returnPlaceholder ?? toSourceLiteral(exampleOutput);
 
   const source = [
     jsdoc,
@@ -63,7 +73,7 @@ export function scaffoldFunction(config: ScaffoldFunctionConfig): ScaffoldFuncti
     ``,
   ].join('\n');
 
-  const testSource = testTemplateGenerator(name, paramDefs, exampleOutput, language);
+  const testSource = testTemplateGenerator(name, paramDefs, exampleOutput, language, returnPlaceholder);
 
   return { fileName, testFileName, source, testSource };
 }
