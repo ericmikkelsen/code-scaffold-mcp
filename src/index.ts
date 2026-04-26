@@ -1,3 +1,4 @@
+export { toSourceLiteral, extractTypeParams } from './utils.js';
 export { toJSParams } from './params.js';
 export { toJSDOC } from './jsdoc.js';
 export { tsTypeToJSDoc } from './type-converter.js';

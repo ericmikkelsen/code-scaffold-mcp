@@ -68,3 +68,34 @@ function serializeSourceLiteral(value: unknown, seen: Set<object>): string {
 export function toSourceLiteral(value: unknown): string {
   return serializeSourceLiteral(value, new Set<object>());
 }
+
+/**
+ * Extracts standalone single-letter uppercase type parameter names from one or
+ * more TypeScript type strings, in the order they are first encountered.
+ *
+ * Matches single uppercase letter identifiers (e.g. `T`, `K`, `V`) that
+ * appear at word boundaries. Multi-letter identifiers (e.g. `Array`, `Record`)
+ * are not matched.
+ *
+ * @param typeStrings - Array of TypeScript type strings to scan
+ * @returns Ordered, deduplicated array of type parameter names
+ *
+ * @example extractTypeParams(['T[]', 'number']) // → ['T']
+ * @example extractTypeParams(['Map<K, V>', 'K']) // → ['K', 'V']
+ */
+export function extractTypeParams(typeStrings: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const typeStr of typeStrings) {
+    const matches = typeStr.matchAll(/(?<![A-Za-z])([A-Z])(?![A-Za-z])/g);
+    for (const [, letter] of matches) {
+      if (!seen.has(letter)) {
+        seen.add(letter);
+        result.push(letter);
+      }
+    }
+  }
+
+  return result;
+}

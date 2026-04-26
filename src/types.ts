@@ -40,6 +40,19 @@ export type ScaffoldFunctionConfig = {
    * The primary scaffold example is always derived from paramDefs[].example + exampleOutput.
    */
   examples?: Array<{ args: unknown[]; output: unknown }>;
+  /**
+   * Optional generic type parameter declarations for the function signature.
+   *
+   * When provided, these are emitted verbatim as `<T, K>` (TS mode only).
+   * Supports constrained params: `['T extends object', 'K extends string']`.
+   *
+   * When omitted, generic type parameters are **auto-detected** by scanning
+   * all param and output type strings for standalone single-letter uppercase
+   * identifiers (e.g. `T`, `K`, `V`) using {@link extractTypeParams}.
+   *
+   * Pass an empty array `[]` to explicitly suppress auto-detection.
+   */
+  typeParams?: string[];
   /** Output language for the generated source and test files */
   language: Language;
 };
